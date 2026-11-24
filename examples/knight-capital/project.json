@@ -1,0 +1,26 @@
+{
+  "title": "Knight Capital, 1 August 2012",
+  "fps": 30,
+  "output": "cold_open.mp4",
+  "cast": "default",
+  "castOverrides": {
+    "tech": { "design": { "propLabel": "NEW CODE" } }
+  },
+  "sets": {
+    "city": {},
+    "floor": {
+      "sign": "KNIGHT CAPITAL",
+      "board": { "label": "MORE THAN", "value": 460000000, "currency": "$" },
+      "boardTicker": ["KCG ▼", "NYSE ▲", "SPY ▲", "DIA ▼", "QQQ ▲", "IWM ▼", "VIX ▲"],
+      "clock": { "h": 9, "m": 30 },
+      "monitor": { "title": "SMALL ORDERS IN", "count": 212, "rows": ["BUY 100", "BUY 50", "SELL 200", "BUY 25", "SELL 75"], "note": "retail order", "status": "OK", "perRow": 21 }
+    },
+    "server": { "racks": { "count": 8, "label": "SMARS", "missed": 7 } },
+    "rack": { "nodeLabel": "SMARS NODE", "drawerLabel": "OLD CODE", "panelPrefix": "PANEL ", "creatureLabel": "v1", "tickets": ["BUY", "SELL"] },
+    "desk": {
+      "wallClock": { "h": 8, "m": 1 },
+      "screen": { "mode": "inbox", "title": "INBOX", "time": "8:01 AM", "sender": "SYSTEM", "subject": "Power Peg disabled", "count": 97 }
+    },
+    "den": { "monitorText": "97 NEW" }
+  }
+}

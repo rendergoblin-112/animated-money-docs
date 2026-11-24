@@ -1,0 +1,19 @@
+{
+  "title": "TODO story, date",
+  "fps": 30,
+  "output": "cold_open.mp4",
+  "cast": "default",
+  "budget": { "tts": 20, "sfx": 15 },
+  "castOverrides": {},
+  "sets": {
+    "city": {},
+    "floor": {
+      "sign": "TODO COMPANY",
+      "board": { "label": "TODO", "value": 0, "currency": "$" },
+      "clock": { "h": 9, "m": 30 },
+      "monitor": { "title": "TODO", "count": 100, "rows": ["BUY 100", "SELL 50"], "note": "order", "status": "OK" }
+    },
+    "desk": { "wallClock": { "h": 9, "m": 0 }, "screen": { "mode": "inbox", "title": "INBOX", "time": "TODO", "sender": "TODO", "subject": "TODO", "count": 10 } },
+    "den": { "monitorText": "TODO" }
+  }
+}

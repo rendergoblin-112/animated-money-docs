@@ -1,0 +1,22 @@
+{
+  "name": "animated-money-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Claude Code skill + three.js engine for drawn finance-documentary cold opens: true money stories, fact-checked, with flat outlined characters in painted 3D sets.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "example": "node template/tools/make.mjs examples/knight-capital",
+    "make": "node template/tools/make.mjs",
+    "render": "node template/tools/render.mjs"
+  },
+  "dependencies": {
+    "@fontsource/luckiest-guy": "5.3.0",
+    "@fontsource/patrick-hand": "5.3.0",
+    "puppeteer": "25.18.1",
+    "three": "0.170.0"
+  }
+}

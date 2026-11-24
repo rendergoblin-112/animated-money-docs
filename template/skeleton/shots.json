@@ -1,0 +1,28 @@
+{
+  "about": "TODO: replace every TODO word with a word from that line (see out/timeline/voice.json after voice_build). Copy cameras from examples/knight-capital/shots.json for the same sets. One shot per clause; cut on the clause's first word.",
+  "acting": {
+    "dotKeys": [[0, "readScreen"], ["@ws S1 TODO -0.12", "antic", 0.12, "io"], ["@ws S1 TODO +0.02", "shock", 0.22, "back"], ["@ws S2 TODO +0.2", "shockHold", 0.4], ["@ws S3 TODO -0.05", "deflate", 0.25, "io"], ["@ws S3 TODO", "relief", 0.35, "back"]],
+    "gusKeys": [[0, "mugIdle"], ["@ws S1 TODO +0.3", "mugLook", 0.4], ["@ws S2 TODO -0.1", "mugUp", 0.25], ["@ws S2 TODO", "point", 0.25, "back"], ["@ws S3 TODO +0.1", "sipStart", 0.4]]
+  },
+  "shots": [
+    { "id": "city", "beat": "hook", "set": "city", "start": 0, "cam": { "pos": [1.5, 0.6, 12], "look": [0, 13.5, -16], "fov": 50 }, "move": { "pan": [0, 2.4, 0] },
+      "tag": { "text": "TODO PLACE, DATE", "t0": 0.15, "t1": 1.1, "x": 110, "y": 160, "size": 72 } },
+    { "id": "board", "beat": "hook", "set": "floor", "start": "@cut NA TODO", "cam": { "pos": [0.35, 2.55, -4.6], "look": [0, 2.95, -8.8], "fov": 50 }, "move": { "push": 0.06 },
+      "cue": { "boardRoll": ["@ws NA TODO", "@we NA TODO"] }, "dof": { "focus": 4.2, "aperture": 0.006, "maxblur": 0.008 }, "grade": { "warm": 0.05 } },
+    { "id": "card1", "beat": "typing card", "type": "card", "start": "@cut NA TODO", "line": "NA", "words": [["TODO ", "TODO"]] },
+    { "id": "setup1", "beat": "setup", "set": "desk", "start": "@cut NB TODO", "cam": { "pos": [0.05, 1.18, 0.95], "look": [0, 1.2, -0.72], "fov": 44 }, "move": { "push": 0.05 } },
+    { "id": "two", "beat": "skit", "set": "den", "start": "@cut S1 TODO", "cam": { "pos": [0.05, 1.08, 1.3], "look": [0.03, 0.85, -0.65], "fov": 42 }, "move": { "pan": [0.12, 0, 0] },
+      "dof": { "target": ["dot", "gus"], "aperture": 0.01, "maxblur": 0.01 }, "act": { "dot": "dotKeys", "gus": "gusKeys" }, "grade": { "warm": 0.08 } },
+    { "id": "gus", "beat": "skit", "set": "den", "start": "@cut S2 TODO", "cam": { "pos": [0.45, 1.24, 0.6], "look": [0.6, 1.12, -0.75], "fov": 38 }, "move": {},
+      "dof": { "target": "gus", "aperture": 0.02, "maxblur": 0.016 }, "act": { "dot": "dotKeys", "gus": "gusKeys" }, "grade": { "warm": 0.08 } },
+    { "id": "dotRelief", "beat": "skit", "set": "den", "start": "@cut S3 TODO", "cam": { "pos": [-0.4, 1.06, 0.95], "look": [-0.52, 1.0, -0.55], "fov": 42 }, "move": { "push": 0.05 },
+      "dof": { "target": "dot", "aperture": 0.018, "maxblur": 0.016 }, "act": { "dot": "dotKeys", "gus": "gusKeys" }, "grade": { "warm": 0.08 } },
+    { "id": "stakes1", "beat": "stakes", "set": "floor", "start": "@cut ND TODO", "cam": { "pos": [0.3, 1.7, 1.6], "look": [0, 2.2, -8], "fov": 52 }, "move": { "push": 0.05 } },
+    { "id": "card2", "beat": "title question", "type": "card", "start": "@cut NC So", "line": "NC", "words": [["So ", "So"], ["TODO ", "TODO"]] },
+    { "id": "title", "beat": "title card", "set": "floor", "start": "@end NC +0.03", "cam": { "pos": [0.3, 1.7, 1.6], "look": [0, 2.2, -8], "fov": 52 }, "move": { "push": 0.04 },
+      "title": { "words": [{ "text": "TODO", "line": 0, "at": 0.1 }, { "text": "TODO KEY", "line": 1, "at": 1.0, "key": true }],
+        "lines": [{ "y": 400, "size": 150, "x": 120 }, { "y": 600, "size": 166, "x": 120 }], "burstAt": 1.85, "burstX": 700, "burstY": 470 } },
+    { "id": "chapter", "beat": "chapter card", "type": "chapter", "start": "@shot title +2.25", "text": "TODO Chapter Name" }
+  ],
+  "end": "@shot chapter +2.1"
+}

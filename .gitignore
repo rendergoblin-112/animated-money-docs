@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+.cache/
+.venv/
+pydeps/
+__pycache__/
+*.pyc
+
+# build output (every project writes into its own out/)
+out/
+renders/
+stills/
+
+# secrets
+.env
+*.env
+
+# OS
+.DS_Store

@@ -1,0 +1,16 @@
+{
+  "about": "One entry per TTS call, in speaking order. Spell numbers out. Narrator lines start with [curious]. facts = tags from FACTS.md (D = dramatised, adds no fact). Fill take after recording (tools/tts.py).",
+  "level": -15.5,
+  "lead": 0.10,
+  "gaps": { "sentence": 0.14, "word": 0.08 },
+  "special": [],
+  "lines": [
+    { "id": "NA", "beat": "hook (ends by 3-10 s)", "speaker": "narrator", "facts": ["F1"], "text": "[curious] TODO one sentence: who or what, the number, the time frame... TODO end of sentence for the typing card." },
+    { "id": "NB", "beat": "setup (8-19 s)", "speaker": "narrator", "facts": ["F2"], "text": "[curious] TODO three or four short sentences: the mechanism, ending on the strange detail the skit reacts to." },
+    { "id": "S1", "beat": "skit line 1: react to the number", "speaker": "dot", "facts": ["F2"], "text": "TODO number repeated as a question?" },
+    { "id": "S2", "beat": "skit line 2: confirm it flatly", "speaker": "gus", "facts": ["F2"], "text": "TODO flat confirmation." },
+    { "id": "S3", "beat": "skit line 3: the confident misreading", "speaker": "dot", "facts": ["D"], "text": "TODO punchline." },
+    { "id": "ND", "beat": "stakes: correct the punchline, then the consequence", "speaker": "narrator", "facts": ["F3"], "text": "[curious] TODO correction. TODO consequence, short sentences." },
+    { "id": "NC", "beat": "title question (So ...?)", "speaker": "narrator", "facts": ["F1", "F2"], "text": "[curious] So how did TODO?" }
+  ]
+}

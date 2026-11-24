@@ -1,0 +1,21 @@
+{
+  "about": "Cue sheet. Files are looked up in sfx/ here, then template/sfx, template/sfx/basic, template/music. See references/09-sound-and-music.md.",
+  "bed": { "file": "bed.mp3", "underSpeech": -37, "measure": [1, 30], "splice": [37.5, 12],
+           "title": { "from": "@shot title -0.05", "level": -31 },
+           "chapter": { "from": "@shot chapter", "level": -48, "ramp": 0.35 } },
+  "duck": -10,
+  "cues": [
+    { "beat": "hook", "file": "city_amb", "at": 0.0, "gain": -2, "until": "@shot board +0.1", "bus": "amb" },
+    { "file": "basic/thump", "at": 0.02, "gain": -2 },
+    { "file": "basic/whoosh", "at": "@shot board -0.06", "gain": -11 },
+    { "file": "counter_roll", "at": "@ws NA TODO", "gain": -15, "until": "@we NA TODO +0.1", "bus": "amb" },
+    { "file": "basic/impact", "at": "@we NA TODO -0.05", "gain": -16 },
+    { "file": "basic/typing", "at": "@shot card1 +0.03", "gain": -3, "until": "@shotend card1 -0.07", "bus": "amb" },
+    { "beat": "skit", "file": "surprise_sting", "at": "@ws S1 TODO -0.02", "gain": -16 },
+    { "file": "basic/swipe", "at": "@shot gus -0.03", "gain": -18 },
+    { "beat": "title question", "file": "basic/typing", "at": "@shot card2 +0.03", "gain": -3, "until": "@shotend card2 -0.1", "bus": "amb" },
+    { "beat": "title card", "file": "basic/riser", "at": "@shot title -0.33", "gain": -18 },
+    { "file": "title_hit", "at": "@shot title +1.0", "gain": -20 },
+    { "file": "basic/whoosh_big", "at": "@shot title +1.4", "gain": -24 }
+  ]
+}
