@@ -1,8 +1,8 @@
 {
-  "about": "One entry per TTS call, in speaking order. Spell numbers out. Narrator lines start with [curious]. facts = tags from FACTS.md (D = dramatised, adds no fact). Fill take after recording (tools/tts.py).",
+  "about": "One entry per TTS call, in speaking order. Spell numbers out. Narrator lines start with [curious]. facts = tags from FACTS.md (D = dramatised, adds no fact). Fill take after recording (tools/tts.py): tempo 1.0, no pitch shifting. About 85-90 words in all for 36-40 s; cut words, not speed.",
   "level": -15.5,
   "lead": 0.10,
-  "gaps": { "sentence": 0.14, "word": 0.08 },
+  "gaps": { "sentence": [0.35, 0.6], "comma": [0.15, 0.3], "word": 0.12, "speaker": [0.3, 0.5], "max": 0.85 },
   "special": [],
   "lines": [
     { "id": "NA", "beat": "hook (ends by 3-10 s)", "speaker": "narrator", "facts": ["F1"], "text": "[curious] TODO one sentence: who or what, the number, the time frame... TODO end of sentence for the typing card." },

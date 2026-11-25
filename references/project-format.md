@@ -33,12 +33,13 @@ Start one with `node template/tools/new.mjs <folder>`: it copies a skeleton with
 ## script.json
 
 ```json
-{ "level": -15.5, "lead": 0.10, "gaps": { "sentence": 0.14, "word": 0.08 }, "special": [["NA", "dollars", 0.16]],
+{ "level": -15.5, "lead": 0.10, "gaps": { "sentence": [0.35, 0.6], "comma": [0.15, 0.3], "word": 0.12, "speaker": [0.3, 0.5], "max": 0.85 },
+  "special": [],
   "lines": [ { "id": "NA", "speaker": "narrator", "facts": ["F1"], "text": "[curious] …",
-               "take": { "audio": "vo/NA_will_1.mp3", "align": "vo/NA_will_1.align.json", "tempo": 1.08, "gap": 0.0 } } ] }
+               "take": { "audio": "vo/NA_will_1.mp3", "align": "vo/NA_will_1.align.json", "tempo": 1.0 } } ] }
 ```
 
-`speaker` is a cast id. Lines are spoken in this order. `take.gap` is the silence before the line. `take.align` defaults to `<audio>.align.json`; keep it pointing at the original call when `audio` is a pitch-corrected copy.
+`speaker` is a cast id. Lines are spoken in this order. `gaps` sets the heard-pause bands (08); `take.pause` (optional) sets the heard pause before a line, otherwise it lands mid-band. `take.tempo` stays 1.0. (The old `"gaps": {"sentence": 0.14, "word": 0.08}` + `take.gap` format is kept only so the Knight example builds as approved.) `take.align` defaults to `<audio>.align.json`; keep it pointing at the original call when `audio` is a pitch-corrected copy.
 
 ## Time expressions ("@…")
 

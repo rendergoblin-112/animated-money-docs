@@ -7,7 +7,10 @@
 //             before: { qty: "1", unit: "SHARE", price: "¥610,000" }, after: { qty: "610,000", unit: "SHARES", price: "¥1" },
 //             cancelText: "CANCEL", failText: "NOT PROCESSED" }
 //   cast: { castId: { pos, worldH } }   (empty by default)
+//   keyboard: { pos: [x, z], hands: { cast: "trader", sleeve, skin } }   opt-in readable keyboard + typing hands (keyboard.js);
+//             without it the desk keeps its original flat keyboard slab
 // }
+// shot cues (keyboard): typing, type, enterAt, handsOffAt -- see keyboard.js
 // shot cues (inbox): emails: [t0, t1]  the unread counter climbs 1 -> count, rows flash, envelopes fly out of the screen
 // shot cues (order): state: "before" | "after" (what the fields show at the shot start, default "before")
 //                    swapAt: t (the two fields trade places: before -> after)   sendAt: t (side button flashes, "SENT")
@@ -16,6 +19,7 @@ import * as THREE from 'three';
 import { mat, basic, box, cyl, plane, canvasTex, glow, pointLight } from '../toon.js';
 import { rng, clamp } from '../util.js';
 import { INKC, FONT, HAND, paint, placeCast } from './common.js';
+import { makeKeyboard } from './keyboard.js';
 
 export function makeDesk(cfg = {}, ctx) {
   const WC = cfg.wallClock === false ? null : { h: 8, m: 1, ...(cfg.wallClock || {}) };
@@ -43,8 +47,10 @@ export function makeDesk(cfg = {}, ctx) {
   const scrGlow = pointLight(0xbfe8ff, 2.4, 3, [0, 1.2, -0.3]); scene.add(scrGlow);
   // sticky notes on the monitor bezel (cfg.stickies: false removes them, e.g. when the screen header must read in close-up)
   for (const [x, y, c, rz] of (cfg.stickies === false ? [] : [[0.52, 1.5, '#ffe36a', 0.1], [-0.55, 1.48, '#ff9ac0', -0.08], [0.56, 1.0, '#9ae0ff', 0.05]])) { const st = canvasTex(64, 64, (g) => { g.fillStyle = c; g.fillRect(0, 0, 64, 64); g.fillStyle = 'rgba(0,0,0,0.25)'; for (let i = 0; i < 3; i++) g.fillRect(10, 16 + i * 14, 40, 4); }); scene.add(plane(0.12, 0.12, basic(0xdddddd, { map: st.tex }), [x, y, -0.712], [0, 0, rz])); }
-  scene.add(box(0.7, 0.025, 0.2, 0x2b2c31, [-0.05, 0.765, -0.2], { outline: 0.006 }));
-  scene.add(box(0.08, 0.025, 0.12, 0x2b2c31, [0.5, 0.765, -0.15], { outline: 0.005 }));
+  if (!cfg.keyboard) {
+    scene.add(box(0.7, 0.025, 0.2, 0x2b2c31, [-0.05, 0.765, -0.2], { outline: 0.006 }));
+    scene.add(box(0.08, 0.025, 0.12, 0x2b2c31, [0.5, 0.765, -0.15], { outline: 0.005 }));
+  }
   const mug = cyl(0.05, 0.045, 0.12, 0xe9e2d6, [-0.8, 0.765, -0.25], { outline: 0.006 }); scene.add(mug);
   const steamT = canvasTex(64, 256, (g) => { g.clearRect(0, 0, 64, 256); g.strokeStyle = 'rgba(255,250,240,0.6)'; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); for (let i = 0; i < 20; i++) { const y = 250 - i * 12, x = 32 + Math.sin(i * 0.7) * 10; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); });
   const steam = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.24), new THREE.MeshBasicMaterial({ map: steamT.tex, transparent: true, depthWrite: false, toneMapped: false })); steam.position.set(-0.8, 1.0, -0.25); scene.add(steam);
@@ -70,6 +76,13 @@ export function makeDesk(cfg = {}, ctx) {
     scene.add(box(0.46, 0.5, 0.06, 0x23262e, [cx, 0.55, cz + 0.24], { outline: 0.01 }));
   }
   const cards = placeCast(scene, ctx, cfg.cast ?? {});
+  // readable keyboard (+ a seated typist's hands) -- opt-in, see keyboard.js
+  let kb = null;
+  if (cfg.keyboard) {
+    kb = makeKeyboard(scene, cfg.keyboard, cards);
+    const [kx, kz] = cfg.keyboard.pos || [-0.2, -0.2];
+    const mouse = box(0.06, 0.022, 0.1, 0x6a6f7c, [kx + 0.33, 0.79, kz + 0.02], { outline: 0.004 }); scene.add(mouse);
+  }
   // ---- order-entry screen: two fields that can trade places, a side button, a cancel button, a failure stamp
   const B = { qty: '1', unit: 'SHARE', price: '', ...(SC.before || {}) }, A = { qty: '', unit: 'SHARES', price: '', ...(SC.after || {}) };
   function drawOrder(T, cue) {
@@ -125,6 +138,7 @@ export function makeDesk(cfg = {}, ctx) {
       const T = st.T, cue = st.cue || {};
       const c = cue.emails; const u = c ? clamp((T - c[0]) / (c[1] - c[0])) : 0; const n = Math.floor(1 + (SC.count - 1) * Math.pow(u, 1.6));
       const shake = u > 0 && u < 1;
+      if (kb) kb.update(st);
       if (SC.mode === 'order') drawOrder(T, cue);
       else scr.draw((g, w, h) => {
         g.fillStyle = '#141a24'; g.fillRect(0, 0, w, h);

@@ -24,6 +24,13 @@ Faster pushes (9–11%/s) are allowed for one or two dramatic beats only (the ap
 
 `"cam": { "pos": [x, y, z], "look": [x, y, z], "fov": 42 }`. Wides 50–56°, mediums 42–46°, close-ups 34–40°. The engine's world is in metres: characters are 1.5–1.9 high.
 
+**Over-the-shoulder shots of someone at a screen** (a back-view figure at the desk):
+- The head covers **at most about a quarter of the frame** and **never covers the numbers on the screen**. In practice: camera up and to the right of the figure, looking down past the head, so the head sits in a lower corner (J-Com: figure head at (−0.22, 1.15, 0.24); camera `[0.4, 1.55, 0.85]` → look `[0, 1.0, −0.55]`, fov 40 → head ≈ 14% of the frame, fields clear, keyboard ≈ 10% hidden).
+- The keys and both hands must show (with the desk `keyboard`, 06). The first J-Com cut had the camera 0.6 m behind the head at fov 46: the head filled a third of the frame and hid the keyboard and part of the screen.
+- A close camera makes the head huge relative to the screen: the head's share falls with the camera's distance from the head, not with the fov.
+
+**The typing insert**: when typing is the story, cut one close-up of the fingers hitting the keys on the key beat (J-Com: "swapped two" → then the over-the-shoulder shot as the fields swap on "numbers", with the Enter strike on the same word). 0.6–0.9 s, `push` 0.08–0.1. Frame from above the far-left corner of the keyboard looking down at the number row and the right hand (`[-0.3, 1.08, -0.12]` → `[0.02, 0.82, -0.25]`, fov 30, keyboard at x −0.08): the legends read upright-ish, and the resting left hand drops out of frame. Low side angles put the near hand in front of the lens; a straight-down POV shows only the backs of the hands. Give the `type` cue `"hand": "R"` and start it a word before the cut, so the hand is already in place on the first frame.
+
 Pitfalls the fix rounds caught (check stills, ref 10):
 - A character's top of head cropped on a low wide: lower and widen the camera.
 - A pointing hand leaving the frame in a single: move the hand pose inward or widen.

@@ -49,7 +49,9 @@ def main():
         a, b = sk[0]["start"], sk[-1]["end"]
         print(f"skit {band(a, 19, 29)}-{b:.2f} s ({band(b - a, 3, 6, '{:.1f}')} s, {len(sk)} lines)   (lands at 19-29 s, 3-6 s, 2-5 lines)")
         nxt = [l for l in V["lines"] if l["start"] >= b]
-        if nxt: print(f"narrator back {nxt[0]['start'] - b:.2f} s after the punchline   (<= 0.1)")
+        if nxt:
+            back = nxt[0]["words"][0]["start"] - sk[-1]["words"][-1]["end"] if nxt[0].get("words") and sk[-1].get("words") else nxt[0]["start"] - b
+            print(f"narrator back {back:.2f} s after the punchline (heard)" + ("  !!" if back > 0.5 else "") + "   (0.3-0.5: a normal hand-off, 08)")
     else:
         print("skit: none  !!  (every measured open has one)")
     q = [l for l in V["lines"] if l["speaker"] in narr and l["words"] and l["words"][0]["text"].strip('"').lower().startswith("so")]

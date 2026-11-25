@@ -34,6 +34,8 @@ A full render costs minutes and holds the machine; a still costs seconds. **Neve
 - [ ] Close-ups have soft backgrounds; wides are sharp.
 - [ ] Characters' rim light comes from the set's lamp side.
 - [ ] Unnamed real people are anonymous (seen from behind, no face).
+- [ ] Over-the-shoulder shots: the head covers at most about a quarter of the frame and none of the screen's numbers; the keys and hands show. Render a still on a key hit too: the finger is down, the key lit.
+- [ ] Keyboard and hands aren't burnt out to white (lower `capTint` / `light`, or `hands.tint`).
 - [ ] Typing cards: white upright text centred on pure black, the narrator's words.
 - [ ] Title card: words on a dark panel, key phrase on a red box, burst + flash at the end; chapter card centred, whole.
 

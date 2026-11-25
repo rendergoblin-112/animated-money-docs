@@ -45,7 +45,7 @@ Add it in your project, not in the default cast: `project.json` → `"castOverri
 
 Design fields: `headR`/`headY` (canvas px on a 1024×1536 card, feet at y 1500), `skin`, `body` {top, bot, w, color, style: cardigan | braces | hoodie | tie | shirt | suit}, `hair` {style: bob | bald | short | back, color}, `glasses` (frame colour), `moustache` (colour), `legs` {top, foot, shoe} or null, `back: true` (no face drawn: anonymous), `eyeX`, `eyeRx`, `eyeRy`, `browY`, `browW`, `propLabel` (text on a held drive). A design can also be `{"bgPerson": [index, front]}` to reuse a generated extra.
 
-Placing it: each set takes `"cast": { "trader": { "pos": [x, y, z], "worldH": 1.5 } }` in `project.json` "sets". A seated figure with `"legs": null` sits on a chair: raise it (`pos` y ≈ 0.38 for worldH 1.32) and give the desk set `"chair": [x, z]` at the same spot (tested in the J-Com example: `pos: [-0.42, 0.38, 0.22]`, `chair: [-0.42, 0.24]`). Back-view characters still show `shock` lines, so a freeze reads from behind. Sets that already hold cast members (den: dot + gus; server: tech; floor: bellGuy) use their defaults unless you give a `cast` list.
+Placing it: each set takes `"cast": { "trader": { "pos": [x, y, z], "worldH": 1.5 } }` in `project.json` "sets". A seated figure with `"legs": null` sits on a chair: raise it (`pos` y ≈ 0.38 for worldH 1.32) and give the desk set `"chair": [x, z]` at the same spot (tested in the J-Com example: `pos: [-0.22, 0.38, 0.24]`, `chair: [-0.22, 0.26]`). A typist at the desk `keyboard` (06) gets 3D forearms and hands on the keys: turn the figure's drawn arms off in its desk poses (`"armL": null, "armR": null`). Back-view characters still show `shock` lines, so a freeze reads from behind. Sets that already hold cast members (den: dot + gus; server: tech; floor: bellGuy) use their defaults unless you give a `cast` list.
 
 Anonymity rules (02): unnamed real people get `back: true`. Never draw a real person's face, hairstyle or signature look.
 
@@ -56,7 +56,7 @@ Measured: about 5 distinct mouth drawings swap over 1.5 s, each held 2–4 frame
 The engine has: **X** closed, **A** small open, **E** wide/teeth (ee, s), **D** open (ah), **O** round (oo, w), **F** teeth on lip (f, v), plus `smile`, `frown`, `OO` (big shocked O) for rests.
 
 `tools/visemes.py` builds them for every cast member with `"talks": true`:
-1. ElevenLabs `/with-timestamps` gives every character's start/end time (kept through trimming and time-stretch by `voice_build.py`).
+1. ElevenLabs `/with-timestamps` gives every character's start/end time (kept through trimming, pause changes and any time-stretch by `voice_build.py`).
 2. Spelling → sound: digraphs th, sh, ch, ph, ee, ea, oo, ou, ow, ai, ay, igh; a silent final e; m/b/p close the mouth; f/v teeth on lip.
 3. The real voice level gates the mouth shut wherever the sound drops (−28 dB under the line's peak).
 4. The mouth leads the audio by one frame (it reads as in sync).
