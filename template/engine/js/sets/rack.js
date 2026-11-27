@@ -1,12 +1,15 @@
 // INSIDE A RACK: patch panel with plugged cables, perforated walls, server faceplates, swaying cable bundles, a spinning fan,
 // and an old beige drawer at the bottom where "the old code" creature sleeps (it can wake, jump and fire order tickets).
-// cfg: { nodeLabel: "NODE", drawerLabel: "OLD CODE", panelPrefix: "PANEL ", creatureLabel: "v1", tickets: ["BUY", "SELL"] }
+// cfg: { nodeLabel: "NODE", drawerLabel: "OLD CODE", panelPrefix: "PANEL ", creatureLabel: "v1", tickets: ["BUY", "SELL"], dress?: false }
 // shot cues: wakeAt: t (creature wakes, red flood)   awake: true   fireAt: t (tickets fly)   shake: true (creature shakes when awake)
+// The dressing adds a warm work light from outside the rack (so the creature has a warm and a cool side) and deep LED bokeh.
+// foregrounds (shot "fg"): rackFg (cables hanging close to the lens), rackFgNear (nearer cables, for a close-up)
 import * as THREE from 'three';
 import { mat, basic, box, plane, canvasTex, glow, pointLight, INK } from '../toon.js';
 import { Card, drawPeg } from '../chars.js';
 import { rng, clamp } from '../util.js';
 import { INKC, FONT, paint, fitSize } from './common.js';
+import { dress } from './dress.js';
 
 export function makeRack(cfg = {}) {
   const C = { nodeLabel: 'NODE', drawerLabel: 'OLD CODE', panelPrefix: 'PANEL ', creatureLabel: 'v1', tickets: ['BUY', 'SELL'], ...cfg };
@@ -110,10 +113,12 @@ export function makeRack(cfg = {}) {
     m.visible = false; scene.add(m);
     tickets.push({ m, t0: i * 0.022, v: [(RT() - 0.5) * 1.8, 0.4 + RT() * 1.3, 0.5 + RT() * 0.9], spin: [(RT() - 0.5) * 14, (RT() - 0.5) * 14, (RT() - 0.5) * 14] });
   }
+  const DR = dress('rack', scene, cfg);
   return {
-    scene, cards: { peg },
+    scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards: { peg },
     update(st) {
       const T = st.T, cue = st.cue || {};
+      DR.update(T);
       const wake = cue.wakeAt != null ? clamp((T - cue.wakeAt) / 0.12) : (cue.awake ? 1 : 0);
       redFlood.intensity = wake * (5 + 2 * Math.sin(T * 14));
       pegLight.color.setHex(wake ? 0xff4030 : 0xb8e8c0); pegLight.intensity = wake ? 2.2 : 0.3;

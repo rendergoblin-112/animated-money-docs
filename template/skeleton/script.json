@@ -1,16 +1,15 @@
 {
-  "about": "One entry per TTS call, in speaking order. Spell numbers out. Narrator lines start with [curious]. facts = tags from FACTS.md (D = dramatised, adds no fact). Fill take after recording (tools/tts.py): tempo 1.0, no pitch shifting. About 85-90 words in all for 36-40 s; cut words, not speed.",
+  "about": "One entry per TTS call, in speaking order. Spell numbers out. A delivery tag only where a line needs one (Gus: [deadpan]); the narrator reads untagged. facts = tags from FACTS.md (D = dramatised, adds no fact). Fill take after recording (tools/tts.py): tempo 1.0, never time-stretched or pitch-shifted; pause = the heard pause before the line. About 80-90 words in all for 36-42 s; cut words, not speed.",
   "level": -15.5,
   "lead": 0.10,
-  "gaps": { "sentence": [0.35, 0.6], "comma": [0.15, 0.3], "word": 0.12, "speaker": [0.3, 0.5], "max": 0.85 },
-  "special": [],
+  "gaps": { "mode": "asRead", "trimOver": 0.70, "trimTo": 0.62, "sentenceMin": 0.35, "head": 0.12, "tail": 0.15 },
   "lines": [
-    { "id": "NA", "beat": "hook (ends by 3-10 s)", "speaker": "narrator", "facts": ["F1"], "text": "[curious] TODO one sentence: who or what, the number, the time frame... TODO end of sentence for the typing card." },
-    { "id": "NB", "beat": "setup (8-19 s)", "speaker": "narrator", "facts": ["F2"], "text": "[curious] TODO three or four short sentences: the mechanism, ending on the strange detail the skit reacts to." },
-    { "id": "S1", "beat": "skit line 1: react to the number", "speaker": "dot", "facts": ["F2"], "text": "TODO number repeated as a question?" },
-    { "id": "S2", "beat": "skit line 2: confirm it flatly", "speaker": "gus", "facts": ["F2"], "text": "TODO flat confirmation." },
-    { "id": "S3", "beat": "skit line 3: the confident misreading", "speaker": "dot", "facts": ["D"], "text": "TODO punchline." },
-    { "id": "ND", "beat": "stakes: correct the punchline, then the consequence", "speaker": "narrator", "facts": ["F3"], "text": "[curious] TODO correction. TODO consequence, short sentences." },
-    { "id": "NC", "beat": "title question (So ...?)", "speaker": "narrator", "facts": ["F1", "F2"], "text": "[curious] So how did TODO?" }
+    { "id": "NA", "beat": "hook (ends by 3-10 s)", "speaker": "narrator", "facts": ["F1"], "text": "TODO one sentence: who or what, the number, the time frame... TODO end of sentence for the typing card." },
+    { "id": "NB", "beat": "setup (8-21 s); take.pause 0.45", "speaker": "narrator", "facts": ["F2"], "text": "TODO three or four short sentences: the mechanism, ending on the strange detail the skit reacts to." },
+    { "id": "S1", "beat": "skit line 1: react to the number; take.pause 0.42", "speaker": "dot", "facts": ["F2"], "text": "TODO number repeated as a question?" },
+    { "id": "S2", "beat": "skit line 2: confirm it flatly; take.pause 0.38", "speaker": "gus", "facts": ["F2"], "text": "[deadpan] TODO flat confirmation." },
+    { "id": "S3", "beat": "skit line 3: the confident misreading; take.pause 0.40", "speaker": "dot", "facts": ["D"], "text": "TODO punchline." },
+    { "id": "ND", "beat": "stakes: correct the punchline, then the consequence; take.pause 0.45", "speaker": "narrator", "facts": ["F3"], "text": "TODO correction. TODO consequence, short sentences." },
+    { "id": "NC", "beat": "title question (So ...?); take.pause 0.50", "speaker": "narrator", "facts": ["F1", "F2"], "text": "So how did TODO?" }
   ]
 }

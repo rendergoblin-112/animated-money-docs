@@ -1,4 +1,4 @@
-# Python tools (voice assembly, mouths, mix, checks: numpy; pitch measurement and PSOLA correction: librosa).
+# Python tools (voice assembly, mouths, mix, checks: numpy; pitch measurement only, as a guide: librosa).
 # Top-level: numpy, librosa. Everything below them is pinned too, as resolved for Python 3.12 (Nov 2026).
 numpy==2.5.4
 librosa==1.0.1

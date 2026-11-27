@@ -3,12 +3,13 @@
 ## Cutting
 
 - **One shot per clause.** Cut where the narrator starts a clause: `"start": "@cut NB onto"` = 2 frames before "onto". 64–85% of cuts should land within 0.3 s of a line or sentence start.
-- **Median shot 1.7–2.0 s, nothing over 5.2 s.** The title-question card is the longest segment (~4.5 s).
+- **Median shot 1.7–2.0 s, nothing over 5.2 s.** The title-question card is the longest segment (~3–4.5 s). At natural speed the median lands near 2.0 s (Knight round 3: 2.00 s, picture shots 1.80 s, longest 3.57 s), and about 65% of cuts land on a line start: there are fewer sentence starts per second to cut on.
 - **21–29 cuts a minute raw.** For 35–40 s that's 15–19 cuts.
 - **Hard cuts by default.** One whip pan (`"whipIn": true`: the previous shot whips out over 3 frames, this one whips in over 8, with motion blur). One or two white flashes (`"flashIn": true`: a 2-frame flash), e.g. on a jump scare and on the title exit.
 - **Typing cards are cuts too**: they cut in on the first typed word and cut out on the next line.
 - **The skit** gets a two-shot on line 1, singles on lines 2 and 3 (cut on each speaker's first word).
-- **The title card** sits on the last picture shot, starting 0.03 s after the title question ends: `"start": "@end NC +0.03"`. The chapter card follows 2.25 s later.
+- **The title card** sits on the last picture shot, starting 0.03 s after the title question ends: `"start": "@end NC +0.03"`. The chapter card follows about 2.2 s later (`"@shot title +2.2"`), and the open ends about 2.05 s after that (`"end": "@shot title +2.2 +2.05"`: one expression rounds once).
+- **Cut so a pause breathes.** With natural pauses there's a 0.35–0.6 s gap between sentences. Cut 2 frames before the next sentence's first word, not into the silence, and let a held shot (the clock, a close-up) carry a pause rather than cutting twice inside it.
 
 ## Camera moves (`shots.json` "move")
 
@@ -18,7 +19,19 @@
 | `"pan": [dx, dy, dz]` | camera and target slide this far (world units) over the shot, centred on the shot's middle. Tilts: `[0, 2.4, 0]` | 19–35% |
 | `{}` | static (still shows set animation) | 9–17% |
 
-Faster pushes (9–11%/s) are allowed for one or two dramatic beats only (the approved example uses them into the missed rack and onto the waking creature). No camera roll.
+Faster pushes (8–11%/s) are allowed for one or two dramatic beats only (the example uses them onto the missed rack and the waking creature). No camera roll. Keep a static shot or two (about 12%): round 3 had every shot moving at first and made the clock and Gus's close-up static.
+
+## Depth, light and line weight per shot
+
+Every picture shot sets three things for the look (06):
+
+| Field | What | Example |
+|---|---|---|
+| `"fg": ["denFgTwo"]` | the set's foreground props for this framing: something close to the lens, blurred by the depth of field | the den two-shot shows a plant, a pen cup and papers along the bottom edge |
+| `"light": { "dot": { "x": 0.85, "y": 0.25, "color": "#ffc46a", "rim": 0.95, "dark": 0.34 } }`, or `"light": "denLamp"` (from `shots.json` → `"lights"`) | each character's key light, from the nearest practical in this framing | the lamp between Dot and Gus: Dot's light points screen-right, Gus's screen-left |
+| `"armW": { "dot": 3.0, "gus": 2.5 }` | arm weight per character | wide 2.5–3.0 (arms read in the wide); close-up 1.55–1.9 (Gus's pointing arm read as a black tentacle at 2.7) |
+
+Set `dof` on the shots that have a foreground (a `focus` at the subject's distance or a `target`), so the foreground goes soft and the subject stays sharp.
 
 ## Framing
 
@@ -43,6 +56,6 @@ Pitfalls the fix rounds caught (check stills, ref 10):
 |---|---|
 | `"tag": { "text": "AUGUST 1, 2012", "t0": 0.15, "t1": 1.1, "x": 110, "y": 160, "size": 72, "fill": "#ffd34a", "arrow": true }` | marker capitals typed on letter by letter between t0 and t1 (absolute seconds or "@" times); `arrow` adds a wobbling arrow |
 | `"counter": { "label": "TRADES", "from": 0, "to": 4000000, "t0": "@ws ND Over", "t1": "@we ND out.", "plus": true, "prefix": "", "x": 1820, "y": 250, "size": 140, "color": "#ffd34a" }` | a big number rolling while it's said, shaking as it climbs; `plus` adds "+" at the end |
-| `"ring": { "at": "@ws ND opened, -0.05", "text": "RIIING!" }` | ring lines around the set's clock anchor |
-| `"title": {...}` | the title card (03, 01): words with `at` (s from shot start), `line`, `key`; `lines` [{x, y, size}]; `burstAt`, `burstX`, `burstY` |
+| `"ring": { "at": "@ws ND Two +0.28", "text": "RIIING!" }` | ring lines around the set's clock anchor |
+| `"title": {...}` | the title card (03, 01): words with `at` (s from shot start), `line`, `key`; `lines` [{x, y, size}]; `burstAt`, `burstX`, `burstY`; `style` "brush" (default: hand-lettered, upright, varied letter sizes, key phrase on a painted red swipe) or "marker" (Luckiest Guy on a red box); `keyColor`, `panelW`. Brush sizes 130–150 px; check the swipe doesn't touch the word before it |
 | `"hide": ["tech"]` | hide a cast member in this shot |

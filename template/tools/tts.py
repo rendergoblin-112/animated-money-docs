@@ -2,9 +2,11 @@
 """tts.py <project> <lineId> [options] : one ElevenLabs TTS call for one script line, through /with-timestamps.
 
 Writes <project>/vo/<line>_<voice>_<n>.mp3, .align.json (character timings) and .tts.json (text, settings, seed, request id),
-appends a row to <project>/VOICE_LOG.md, and (if librosa is installed) prints the take's median pitch against the cast target.
+appends a row to <project>/VOICE_LOG.md, and (if librosa is installed) prints the take's median pitch and its pitch movement
+(spread, semitones between the 10th and 90th percentile: a flat, sing-song or robotic read shows up here).
 
-Text comes from script.json (that line's "text"; put the delivery tag first, e.g. "[curious] ...", and spell numbers out).
+Text comes from script.json (that line's "text", numbers spelled out). A delivery tag goes first only where a line needs
+one, e.g. Gus's "[deadpan] ..."; the default narrator (Roger) reads untagged.
 Voice comes from the speaker's cast entry (voice.id, voice.settings) unless you pass --voice.
   --voice <castId|voiceId>   --stability S  --similarity S  --style S  --seed N  --model eleven_v4
   --prev auto|none|<ids>     continuity with earlier takes. <ids> = line ids or request ids, comma separated (up to 3).
@@ -13,14 +15,15 @@ Voice comes from the speaker's cast entry (voice.id, voice.settings) unless you 
                              to previous_text. auto = for a narrator line, the up to 3 previous lines by the same voice
                              (stitched); for any other line, the line before as previous_text.
   --text "..."               try a different wording (logged; update script.json if you keep it)
-  --ref HZ                   narrator pitch for the skit voices' ratio band (default: median of logged narrator takes, else 130)
+  --ref HZ                   narrator pitch for the skit voices' ratio guide (default: median of logged narrator takes, else 120, Roger's)
   --force                    ignore the project's TTS budget (project.json "budget": {"tts": N})
   --env-file <path>          read ELEVENLABS_API_KEY from this dotenv file if it isn't in the environment
 Needs ELEVENLABS_API_KEY in the environment (or --env-file).
 
-Pitch: if the cast voice has "band" (Hz) or "bandRatio" (x the narrator), the take is marked in or out of band. Out of band:
-re-roll the seed or change the delivery tag. Don't pitch-shift (PSOLA audibly roughens the voice); a take slightly outside
-the band beats a shifted one."""
+Pitch is a GUIDE, never a reason to process a take: if the cast voice has "band" (Hz) or "bandRatio" (x the narrator), the
+take is marked inside or outside it. Choose takes by how natural they sound (listen; check the spread and the STT). A take
+outside the guide that sounds natural is kept and logged; one that sounds wrong is re-rolled (new seed) or re-tagged. Never
+pitch-shift or time-stretch a take: both audibly process the voice (references/08-voices.md)."""
 import base64, glob, json, os, re, sys, time, urllib.request, urllib.error
 from common import Project, load_cast, ssl_context, api_key, pop_env_file, die
 
@@ -48,7 +51,7 @@ def main():
     budget = (pj.get("budget") or {}).get("tts")
     used = len(glob.glob(os.path.join(vo, "*.tts.json")))
     if budget is not None and used >= budget and not force:
-        die(f"TTS budget reached: {used}/{budget} calls logged in {vo}. Reuse a take, pitch-correct one (tools/psola.py), or pass --force.")
+        die(f"TTS budget reached: {used}/{budget} calls logged in {vo}. Reuse a take you have (cut words in the script rather than re-record), or pass --force.")
     text = opt.get("--text") or L["text"]
     settings = dict((voice.get("settings") or {}))
     body = {"text": text, "model_id": opt.get("--model", "eleven_v4"), "language_code": pj.get("language", "en"),
@@ -60,7 +63,7 @@ def main():
     if prev != "none":
         def newest(line_id):  # the line's chosen take (script.json take.audio), else its newest: (request id, age in s, voice id)
             tk = (lines[ids.index(line_id)].get("take") or {}).get("audio", "")
-            chosen = P.p(re.sub(r"(_ps)?\.(mp3|wav)$", "", tk) + ".tts.json") if tk else ""
+            chosen = P.p(re.sub(r"\.(mp3|wav)$", "", tk) + ".tts.json") if tk else ""
             fs = [chosen] if chosen and os.path.exists(chosen) else sorted(glob.glob(os.path.join(vo, f"{line_id}_*.tts.json")), key=os.path.getmtime)
             if not fs: return None
             d = json.load(open(fs[-1]))
@@ -103,7 +106,9 @@ def main():
         lo, hi = (who.get("voice") or {}).get("pyinRange", [65, 400])
         f, vv, _ = librosa.pyin(y, fmin=lo, fmax=hi, sr=sr, frame_length=1024)
         f = f[vv & ~np.isnan(f)]
-        if len(f): pitch = f"{np.median(f):.1f} Hz"; hz = float(np.median(f))
+        if len(f):
+            hz = float(np.median(f)); spread = 12 * np.log2(np.percentile(f, 90) / np.percentile(f, 10))
+            pitch = f"{hz:.1f} Hz, spread {spread:.1f} st"
     except Exception:
         hz = None
     verdict = ""
@@ -111,17 +116,17 @@ def main():
     if pitch and hz:
         log["pitch_hz"] = round(hz, 1); json.dump(log, open(out[:-4] + ".tts.json", "w"), indent=1)
         if vc.get("band"):
-            lo_, hi_ = vc["band"]; verdict = "in band" if lo_ <= hz <= hi_ else f"OUT of band {lo_}-{hi_} Hz"
+            lo_, hi_ = vc["band"]; verdict = "inside the guide" if lo_ <= hz <= hi_ else f"outside the guide {lo_}-{hi_} Hz"
         elif vc.get("bandRatio"):
             ref = float(opt["--ref"]) if "--ref" in opt else None
             if ref is None:
                 nid = (cast.get("narrator", {}).get("voice") or {}).get("id")
                 nar = [d_.get("pitch_hz") for d_ in (json.load(open(f_)) for f_ in glob.glob(os.path.join(vo, "*.tts.json"))) if d_.get("voice") == nid]
                 nar = [x for x in nar if x]
-                ref = float(np.median(nar)) if nar else 130.0
+                ref = float(np.median(nar)) if nar else 120.0
             r_ = hz / ref; lo_, hi_ = vc["bandRatio"]
-            verdict = f"{r_:.2f}x narrator ({ref:.0f} Hz): " + ("in band" if lo_ <= r_ <= hi_ else f"OUT of band {lo_}-{hi_}x")
-        if "OUT" in verdict: verdict += " -> re-roll the seed or change the delivery tag; don't pitch-shift"
+            verdict = f"{r_:.2f}x narrator ({ref:.0f} Hz): " + ("inside the guide" if lo_ <= r_ <= hi_ else f"outside the guide {lo_}-{hi_}x")
+        if "outside" in verdict: verdict += " -> listen: keep it if it sounds natural (log it), else re-roll the seed; never pitch-shift"
     logf = P.p("VOICE_LOG.md")
     if not os.path.exists(logf):
         open(logf, "w").write("# Voice log\n\nEvery ElevenLabs TTS call, in order. Budget: " + (f"{budget}" if budget is not None else "none set") + ".\n\n| # | File | Line | Voice | Text | Settings | Request id | Pitch | Used |\n|---|---|---|---|---|---|---|---|---|\n")

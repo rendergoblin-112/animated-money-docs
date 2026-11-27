@@ -1,9 +1,11 @@
 // CITY: pre-dawn exterior. A lit tower in the middle, skyline, street, lamps, cars driving, clouds drifting, a blinking beacon.
-// cfg: { sign?: "TEXT ON THE TOWER TOP", signColor?: "#e2bd6e" }
+// cfg: { sign?: "TEXT ON THE TOWER TOP", signColor?: "#e2bd6e", dress?: false }
+// foreground (shot "fg"): cityFg (a street lamp and a tree close to the lens)
 import * as THREE from 'three';
 import { mat, basic, box, cyl, plane, canvasTex, glow, pointLight } from '../toon.js';
 import { rng } from '../util.js';
 import { windowsTex, inkText, fitSize } from './common.js';
+import { dress } from './dress.js';
 
 export function makeCity(cfg = {}) {
   const scene = new THREE.Scene();
@@ -68,8 +70,10 @@ export function makeCity(cfg = {}) {
     scene.add(plane(10.4, 1.5, sm, [0, 42.4, -10.9]));
     scene.add(glow(0xffcf80, 9, [0, 42.4, -10.6], 0.18));
   }
-  return { scene, cards: {}, update(st) {
+  const DR = dress('city', scene, cfg);
+  return { scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards: {}, update(st) {
     const T = st.T;
+    DR.update(T);
     for (const c of cars) c.g.position.x = c.dir * (-30 + ((T * 9 + c.ph) % 60));
     clouds.forEach((m, i) => { m.position.x = -90 + i * 45 + T * 1.5; });
     beacon.material.opacity = Math.sin(T * 5) > 0.3 ? 0.95 : 0.05;

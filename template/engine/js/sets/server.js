@@ -1,12 +1,16 @@
 // SERVER ROOM: a row of racks with status lamps (one of them the odd one out), a second row behind, cable trays, hazard tape,
 // a workbench with a lamp, a laptop cart, an extinguisher, an exit sign. Sparks and a red alarm on the odd rack.
-// cfg: { racks: { count: 8, label: "SMARS", missed: 7 }, cast: { tech: { pos, worldH } } }
+// The aisle is dressed (dress.js): caged work lamps, a second workbench, boxes, a ladder, a cable spool, a floor work-light.
+// cfg: { racks: { count: 8, label: "SMARS", missed: 7 }, cast: { tech: { pos, worldH } }, dress?: false }
 // shot cues: greenAt: [t, step]  lamps go green one by one (all but the missed rack)
 //            allGreen: true      staleBlink: t (missed rack blinks amber)   alarmAt: t / alarm: true (missed rack red)   sparks: true
+// foregrounds (shot "fg"): srvFgTech (crash cart, laptop, lamp, hanging cable), srvFgAisle (cart, boxes, floor cable),
+//                           srvFgStale (hanging cables in front of the missed rack)
 import * as THREE from 'three';
 import { mat, basic, box, cyl, plane, canvasTex, glow, pointLight } from '../toon.js';
 import { rng } from '../util.js';
 import { INKC, FONT, paint, placeCast, fitSize } from './common.js';
+import { dress } from './dress.js';
 
 export function makeServer(cfg = {}, ctx) {
   const RK = { count: 8, label: '', missed: 7, ...(cfg.racks || {}) };
@@ -76,10 +80,12 @@ export function makeServer(cfg = {}, ctx) {
   scene.add(new THREE.HemisphereLight(0x5f80c0, 0x14101a, 0.45));
   const cards = placeCast(scene, ctx, cfg.cast ?? { tech: { pos: [-2.55, 0, -1.75], worldH: 1.85 } });
   const sparks = []; for (let i = 0; i < 18; i++) { const s = glow(0xffd06a, 0.08, [mx, 1.5, -2.3], 0); scene.add(s); sparks.push({ s, ph: i * 0.37, v: [(Math.sin(i * 7) * 0.8), 1 + (i % 3) * 0.4, 0.6 + (i % 4) * 0.2] }); }
+  const DR = dress('server', scene, cfg);
   return {
-    scene, cards, racks,
+    scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards, racks,
     update(st) {
       const T = st.T, cue = st.cue || {};
+      DR.update(T);
       rackFace.redraw(Math.floor(T * 7));
       for (let i = 0; i < RK.count; i++) {
         const r = racks[i]; let col = 0x2a2d33, op = 0;

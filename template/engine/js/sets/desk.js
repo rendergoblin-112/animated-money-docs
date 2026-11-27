@@ -9,7 +9,9 @@
 //   cast: { castId: { pos, worldH } }   (empty by default)
 //   keyboard: { pos: [x, z], hands: { cast: "trader", sleeve, skin } }   opt-in readable keyboard + typing hands (keyboard.js);
 //             without it the desk keeps its original flat keyboard slab
+//   dress: false   no room dressing (bookshelf, floor lamp, filing cabinet, cork board, sconce: dress.js)
 // }
+// foregrounds (shot "fg"): deskFgWide (pendant, mug, files for a wide), deskFgClose (mug, pen cup for a close-up)
 // shot cues (keyboard): typing, type, enterAt, handsOffAt -- see keyboard.js
 // shot cues (inbox): emails: [t0, t1]  the unread counter climbs 1 -> count, rows flash, envelopes fly out of the screen
 // shot cues (order): state: "before" | "after" (what the fields show at the shot start, default "before")
@@ -20,6 +22,7 @@ import { mat, basic, box, cyl, plane, canvasTex, glow, pointLight } from '../too
 import { rng, clamp } from '../util.js';
 import { INKC, FONT, HAND, paint, placeCast } from './common.js';
 import { makeKeyboard } from './keyboard.js';
+import { dress } from './dress.js';
 
 export function makeDesk(cfg = {}, ctx) {
   const WC = cfg.wallClock === false ? null : { h: 8, m: 1, ...(cfg.wallClock || {}) };
@@ -132,10 +135,12 @@ export function makeDesk(cfg = {}, ctx) {
       g.restore();
     }, key);
   }
+  const DR = dress('desk', scene, cfg);
   return {
-    scene, cards,
+    scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards,
     update(st) {
       const T = st.T, cue = st.cue || {};
+      DR.update(T);
       const c = cue.emails; const u = c ? clamp((T - c[0]) / (c[1] - c[0])) : 0; const n = Math.floor(1 + (SC.count - 1) * Math.pow(u, 1.6));
       const shake = u > 0 && u < 1;
       if (kb) kb.update(st);

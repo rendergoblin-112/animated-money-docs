@@ -8,6 +8,7 @@ import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { Pass, FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { SETS } from './sets/index.js';
 import { interp } from './anim.js';
 import { bgPerson } from './chars.js';
@@ -45,6 +46,76 @@ class DOFPass extends BokehPass {
   }
 }
 
+// ---------------------------------------------------------------- screen-space BRUSH INK on the sets
+// A normal + depth pre-pass, then every depth break (silhouettes, overlaps) and crease (normal change) gets a black line.
+// The line's width varies along the screen like a loaded brush (low-frequency noise), wobbles slightly (sample jitter),
+// is heavier on near objects and fades out into the fog, so walls, desks, racks and props read as drawn, like the cast.
+// Character cards are drawn as flat camera-facing normals (their own brush lines do the work); sprites, transparent meshes,
+// inverted-hull outlines and anything tagged userData.noInk are left out.
+const INK_FRAG = `uniform sampler2D tColor, tNormal, tDepth; uniform vec2 res; uniform float near, far, width, inkFar, seed, strength; varying vec2 vUv;
+  float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h21(i), h21(i+vec2(1,0)), f.x), mix(h21(i+vec2(0,1)), h21(i+vec2(1,1)), f.x), f.y); }
+  float lin(vec2 uv){ float z = texture2D(tDepth, uv).x * 2.0 - 1.0; return (2.0 * near * far) / (far + near - z * (far - near)); }
+  vec3 nrm(vec2 uv){ return texture2D(tNormal, uv).xyz * 2.0 - 1.0; }
+  void main(){
+    vec4 col = texture2D(tColor, vUv);
+    float d0 = lin(vUv);
+    if (d0 > far * 0.95) { gl_FragColor = col; return; }
+    vec2 px = 1.0 / res;
+    // brush: width breathes along the screen; slight wobble of the sampling point
+    float b = vn(vUv * vec2(7.0, 4.0) + seed) * 0.65 + vn(vUv * vec2(23.0, 17.0) + seed * 1.7) * 0.35;
+    float w = width * (0.55 + 0.95 * b) * clamp(pow(2.6 / d0, 0.3), 0.7, 1.55);
+    vec2 uv = vUv + (vec2(vn(vUv * 90.0 + seed), vn(vUv * 90.0 + seed + 7.3)) - 0.5) * px * 1.4;
+    float w0 = 1.0 / lin(uv); vec3 n0 = nrm(uv);
+    float e = 0.0;
+    for (int i = 0; i < 4; i++) {
+      vec2 o = (i == 0 ? vec2(1, 0) : i == 1 ? vec2(0, 1) : i == 2 ? vec2(0.707, 0.707) : vec2(0.707, -0.707)) * px * w;
+      float wa = 1.0 / lin(uv + o), wb = 1.0 / lin(uv - o);
+      float dd = abs(wa + wb - 2.0 * w0) / w0;                  // 2nd difference of 1/z: zero on any flat plane
+      e = max(e, smoothstep(0.006, 0.03, dd));
+      float nd = max(1.0 - dot(n0, nrm(uv + o)), 1.0 - dot(n0, nrm(uv - o)));
+      e = max(e, smoothstep(0.22, 0.5, nd));
+    }
+    e *= strength * (1.0 - smoothstep(inkFar * 0.55, inkFar, d0));
+    gl_FragColor = vec4(mix(col.rgb, vec3(0.071, 0.063, 0.078), e), col.a);
+  }`;
+class InkPass extends Pass {
+  constructor(scene, camera) {
+    super();
+    this.scene = scene; this.camera = camera;
+    this.rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType }); this.rt.depthTexture = new THREE.DepthTexture(W, H); this.rt.depthTexture.type = THREE.UnsignedIntType;
+    this.nm = { [THREE.FrontSide]: new THREE.MeshNormalMaterial({ side: THREE.FrontSide }), [THREE.BackSide]: new THREE.MeshNormalMaterial({ side: THREE.BackSide }), [THREE.DoubleSide]: new THREE.MeshNormalMaterial({ side: THREE.DoubleSide }) };
+    this.uniforms = { tColor: { value: null }, tNormal: { value: this.rt.texture }, tDepth: { value: this.rt.depthTexture }, res: { value: new THREE.Vector2(W, H) }, near: { value: 0.05 }, far: { value: 300 }, width: { value: 1.5 }, inkFar: { value: 20 }, seed: { value: 0 }, strength: { value: 0.92 } };
+    this.quad = new FullScreenQuad(new THREE.ShaderMaterial({ uniforms: this.uniforms, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }', fragmentShader: INK_FRAG }));
+  }
+  render(renderer, writeBuffer, readBuffer) {
+    const swaps = [], hidden = [];
+    this.scene.traverse((o) => {
+      if (!o.visible) return;
+      if (o.isSprite || o.userData.hull || o.userData.noInk || (o.isMesh && o.material.transparent && !o.material.alphaTest)) { hidden.push(o); return; }
+      if (!o.isMesh) return;
+      let m = this.nm[o.material.side ?? THREE.FrontSide];
+      if (o.material.alphaTest > 0) m = o.userData.inkMat || (o.userData.inkMat = new THREE.ShaderMaterial({ uniforms: { map: { value: o.material.map } }, side: THREE.DoubleSide,
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+        fragmentShader: 'uniform sampler2D map; varying vec2 vUv; void main(){ if (texture2D(map, vUv).a < 0.5) discard; gl_FragColor = vec4(0.5, 0.5, 1.0, 1.0); }' }));
+      swaps.push([o, o.material]); o.material = m;
+    });
+    for (const o of hidden) o.visible = false;
+    const fog = this.scene.fog, bg = this.scene.background; this.scene.fog = null; this.scene.background = null;
+    try {
+      const oc = new THREE.Color(); renderer.getClearColor(oc); const oa = renderer.getClearAlpha();
+      renderer.setClearColor(0x8080ff, 1); renderer.setRenderTarget(this.rt); renderer.clear(); renderer.render(this.scene, this.camera);
+      renderer.setClearColor(oc, oa);
+    } finally { for (const [o, m] of swaps) o.material = m; for (const o of hidden) o.visible = true; this.scene.fog = fog; this.scene.background = bg; }
+    this.uniforms.tColor.value = readBuffer.texture; this.uniforms.near.value = this.camera.near; this.uniforms.far.value = this.camera.far;
+    renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer); this.quad.render(renderer);
+  }
+}
+// how far the ink reaches into each set (metres; it fades out between 55% and 100% of this) and its width in pixels.
+// A set's config can override them: "ink": { "far": 12, "width": 1.8 }, or "ink": false for no set ink.
+const INK_FAR = { city: 140, floor: 17, server: 11, rack: 3.2, desk: 6, den: 9, court: 12 };
+const INK_W = { city: 1.4 };
+
 async function main() {
   const get = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(`cannot load ${u} (${r.status})`); return r.json(); };
   const [TL, P, CAST, V, VIS] = await Promise.all([get('/tl.json'), get('/project.json'), get('/cast.json'), get('/voice.json'), get('/visemes.json')]);
@@ -68,13 +139,26 @@ async function main() {
     if (!SETS[kind]) throw new Error(`project.json: unknown set "${kind}" (sets: ${Object.keys(SETS).join(', ')})`);
     sets[name] = SETS[kind](cfg, ctx);
   }
-  for (const sh of TL.shots) if (!sh.type && !sets[sh.set]) throw new Error(`shot ${sh.id}: set "${sh.set}" is not built (add it to project.json "sets")`);
+  const kindOf = {}; for (const [name, cfg] of Object.entries(P.sets || {})) kindOf[name] = cfg.kind || name;
+  for (const sh of TL.shots) {
+    if (sh.type) continue;
+    if (!sets[sh.set]) throw new Error(`shot ${sh.id}: set "${sh.set}" is not built (add it to project.json "sets")`);
+    const have = sets[sh.set].fgGroups || [];
+    for (const n of sh.fg || []) if (have.length && !have.includes(n)) throw new Error(`shot ${sh.id}: foreground "${n}" is not in set ${sh.set} (it has: ${have.join(', ')})`);
+    if (sh.title && (sh.title.style ?? 'brush') === 'brush') {
+      const miss = OV.missingGlyphs(sh.title.words.map((w) => w.text).join(''));
+      if (miss.length) throw new Error(`shot ${sh.id}: the brush title alphabet has no ${miss.map((c) => JSON.stringify(c)).join(' ')} (it has ${OV.BRUSH_CHARS}); reword, or set "style": "marker" on the title`);
+    }
+  }
   const first = Object.values(sets)[0];
   const camera = new THREE.PerspectiveCamera(45, W / H, 0.05, 300);
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 }));
   const renderPass = new RenderPass(first.scene, camera); composer.addPass(renderPass);
+  const ink = new InkPass(first.scene, camera); composer.addPass(ink);
   const dof = new DOFPass(first.scene, camera, { focus: 3, aperture: 0.01, maxblur: 0.01 }); composer.addPass(dof);
-  const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.45, 0.84); composer.addPass(bloom);
+  // bloom kept low (0.32) so lamps glow without washing out the lit faces; project.json "bloom": [strength, radius, threshold]
+  const BL = P.bloom || [0.32, 0.4, 0.88];
+  const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), BL[0], BL[1], BL[2]); composer.addPass(bloom);
   composer.addPass(new OutputPass());
   // grade: true blacks, more saturation (more again on close-ups), mid-tone contrast, highlight shoulder, vignette
   const G = { sat: 1.35, satClose: 1.45, vig: 0.38, vigClose: 0.48, warm: 0.03, lift: 0.0, ...(P.grade || {}) };
@@ -113,7 +197,8 @@ async function main() {
     if (m.pan) { const u = t / dur - 0.5; for (const k of [0, 1, 2]) { pos.setComponent(k, pos.getComponent(k) + m.pan[k] * u); look.setComponent(k, look.getComponent(k) + m.pan[k] * u); } }
     const shaking = sh.cue?.shake && (sh.cue.awake || (sh.cue.wakeAt != null && sh.start + t > sh.cue.wakeAt));
     if (shaking) { look.x += noise1(t * 40, 1) * 0.007; look.y += noise1(t * 40, 2) * 0.007; }
-    if (sh.cue?.boardRoll && sh.start + t > sh.cue.boardRoll[0]) { look.x += noise1(t * 30, 3) * 0.01; look.y += noise1(t * 30, 4) * 0.008; }
+    // the camera jolts while the loss board rolls (cue.rollShake: false keeps a wide shot steady while the board rolls in it)
+    if (sh.cue?.boardRoll && sh.cue.rollShake !== false && sh.start + t > sh.cue.boardRoll[0]) { look.x += noise1(t * 30, 3) * 0.01; look.y += noise1(t * 30, 4) * 0.008; }
     if (sh.cue?.shakeAt != null && sh.start + t > sh.cue.shakeAt && sh.start + t < sh.cue.shakeAt + (sh.cue.shakeFor ?? 0.6)) { look.x += noise1(t * 40, 5) * 0.009; look.y += noise1(t * 40, 6) * 0.008; }
     camera.position.copy(pos); camera.fov = c.fov; camera.lookAt(look);
     let wamt = 0; const fi = f - sh.f0;
@@ -133,6 +218,7 @@ async function main() {
     if (sh.type === 'chapter') { OV.chapterCard(ov, sh.text, sh.size); return { shot: sh.id }; }
     const S = sets[sh.set];
     placeCamera(sh, t, f);
+    if (S.setFg) S.setFg(sh.fg || []);
     S.update({ T, t, shot: sh, cue: sh.cue || {}, camera });
     const tq = Math.floor(T * 15) / 15;
     for (const [name, c] of Object.entries(S.cards)) {
@@ -150,16 +236,23 @@ async function main() {
       const C = CAST[c.castId || name]; if (!C) continue;
       c.group.visible = !(sh.hide || []).includes(name);
       const Pz = interp(sh.act?.[name] || [[0, C.rest]], C.poses, T);
-      const st = { ...Pz, light: C.light, t: tq };
+      // light: the shot's key light for this character (from the nearest lamp in that framing), else the cast default;
+      // armW: the shot's arm weight (thinner in close-ups so an arm doesn't read as a black tube), else the design's
+      const st = { ...Pz, armW: sh.armW?.[name], light: sh.light?.[name] || C.light, t: tq };
       if (C.talks) {
         const vm = speaking(name, T) ? mouthOf(name, f) : null;
-        st.mouth = vm || (Pz.shock > 0.3 ? 'OO' : Pz.eyes === 'happy' ? (C.happyMouth || 'smile') : 'X');
-      } else if (C.happyMouth) st.mouth = Pz.eyes === 'happy' ? C.happyMouth : 'X';
+        // a reaction pose can name its own resting mouth (restMouth: 'OO', 'frown', 'bigSmile', 'flat'...)
+        st.mouth = vm || Pz.restMouth || (Pz.shock > 0.3 ? 'OO' : Pz.eyes === 'happy' ? (C.happyMouth || 'smile') : 'X');
+      } else if (C.happyMouth) st.mouth = Pz.restMouth || (Pz.eyes === 'happy' ? C.happyMouth : 'X');
       if (C.blink) st.blink = !speaking(name, T) && (Math.floor(T * FPS + (C.blink.offset || 0)) % 79) < 3 && Pz.eyes !== 'happy';
       if (C.breath) st.bob = (Pz.bob || 0) + Math.round(Math.sin(T * C.breath.rate + (C.breath.phase || 0)) * C.breath.amp);
       c.set(st, C.tint ?? 1);
     }
-    renderPass.scene = S.scene; dof.scene = S.scene;
+    renderPass.scene = S.scene; dof.scene = S.scene; ink.scene = S.scene;
+    const IK = P.sets?.[sh.set]?.ink, kind = kindOf[sh.set];
+    ink.enabled = IK !== false;
+    ink.uniforms.inkFar.value = IK?.far ?? INK_FAR[kind] ?? 20; ink.uniforms.seed.value = (Math.floor(T * 15) % 3) * 0.37; // the line boils very slightly on twos
+    ink.uniforms.width.value = IK?.width ?? INK_W[kind] ?? 2.1;
     dof.enabled = !!sh.dof;
     if (sh.dof) {
       let focus = sh.dof.focus;

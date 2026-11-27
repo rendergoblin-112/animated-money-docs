@@ -1,7 +1,7 @@
 {
   "dot": {
     "about": "Recurring skit character. Small analyst with round red glasses, a dark bob and a mustard cardigan. Eager, quick to panic, quick to relax. Not a real person.",
-    "design": { "headR": 205, "headY": 560, "skin": "#f1c7a1", "body": { "top": 705, "bot": 1318, "w": 400, "color": "#e0a12e", "style": "cardigan" }, "hair": { "style": "bob", "color": "#2e211d" }, "glasses": "#d8342c", "legs": { "top": 1290, "foot": 1488, "shoe": "#3a2a26" }, "eyeX": 0.31, "browY": 0.36 },
+    "design": { "headR": 205, "headY": 560, "skin": "#f1c7a1", "body": { "top": 705, "bot": 1318, "w": 400, "color": "#e0a12e", "style": "cardigan" }, "hair": { "style": "bob", "color": "#2e211d" }, "glasses": "#d8342c", "legs": { "top": 1290, "foot": 1488, "shoe": "#3a2a26" }, "eyeX": 0.31, "browY": 0.36, "armW": 2.9 },
     "worldH": 1.62,
     "light": { "x": 0.75, "y": 0.15, "color": "#ffd27a", "rim": 0.75, "dark": 0.26 },
     "talks": true,
@@ -9,23 +9,23 @@
     "breath": { "rate": 2.4, "amp": 4, "phase": 0 },
     "tint": 1,
     "rest": "readScreen",
-    "voice": { "name": "Jessica", "id": "cgSgspJ2msm6clMCkdW9", "premade": true, "target": "1.6-1.9x the narrator (about 210-250 Hz)", "bandRatio": [1.6, 1.9], "measured": "232.7 Hz on an exclaimed line, 214.6 Hz on a flat one (1.78x / 1.64x)", "settings": { "stability": 0.5 }, "pyinRange": [150, 500], "notes": "Measure her with a 150-500 Hz pyin range: a 65 Hz floor locks onto her vocal fry. Higher stability (0.95) gives a flatter, lower deadpan read." },
+    "voice": { "name": "Jessica", "id": "cgSgspJ2msm6clMCkdW9", "premade": true, "target": "a guide: about 1.6-1.9x the narrator", "bandRatio": [1.6, 1.9], "measured": "233.3 Hz on an exclaimed line (1.93x Roger, kept: natural), 214.6 Hz on a flat one (1.78x)", "settings": { "stability": 0.5 }, "pyinRange": [150, 500], "notes": "Measure her with a 150-500 Hz pyin range: a 65 Hz floor locks onto her vocal fry. Higher stability (0.95) gives a flatter, lower read. A take a little outside the guide that sounds natural is kept as is." },
     "poses": {
       "readScreen": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [694, 1000], "h": [652, 1150], "hand": "open" }, "look": [0.8, 0.2], "lean": 0.03, "eyes": "open", "brows": "neutral", "sx": 1, "sy": 1, "bob": 0, "tilt": 0.04, "eyeScale": 1, "browRaise": 0, "shock": 0, "headDx": 0, "blush": 0, "armsFront": false },
-      "antic": { "armL": { "e": [340, 980], "h": [400, 1100], "hand": "open" }, "armR": { "e": [684, 980], "h": [624, 1100], "hand": "open" }, "sx": 1.05, "sy": 0.93, "bob": 22, "eyes": "open", "brows": "up", "look": [0.3, 0.2], "tilt": 0, "lean": 0 },
-      "shock": { "armsFront": true, "armL": { "e": [170, 700], "h": [305, 600], "hand": "flat", "dir": -0.95 }, "armR": { "e": [854, 700], "h": [719, 600], "hand": "flat", "dir": -2.19 }, "sx": 0.96, "sy": 1.06, "bob": -34, "eyes": "wide", "eyeScale": 1.28, "brows": "up", "browRaise": 1, "shock": 1, "look": [0, 0], "tilt": 0, "lean": 0 },
-      "shockLean": { "use": "shock", "lean": 0.07, "headDx": 16, "look": [1, 0], "sx": 1, "sy": 1.02, "bob": -20, "shock": 0.6 },
-      "shockHold": { "use": "shock", "lean": 0.06, "headDx": 14, "look": [1, -0.2], "eyeScale": 1.12, "sx": 1, "sy": 1, "bob": -12, "shock": 0 },
-      "deflate": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [694, 1000], "h": [652, 1150], "hand": "open" }, "armsFront": false, "sx": 1.03, "sy": 0.96, "bob": 12, "eyes": "open", "brows": "neutral", "browRaise": 0, "eyeScale": 1, "lean": 0, "headDx": 0, "look": [0.6, 0], "shock": 0, "tilt": 0.02 },
-      "relief": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [700, 1070], "h": [560, 930], "hand": "flat", "dir": -2.7 }, "eyes": "happy", "brows": "up", "browRaise": 0.3, "tilt": -0.08, "lean": -0.035, "sx": 1, "sy": 0.98, "bob": 4, "blush": 0.6, "look": [0, 0], "headDx": 0 },
-      "reliefSmile": { "use": "relief", "tilt": -0.04, "bob": 0 },
+      "antic": { "armL": { "e": [340, 980], "h": [400, 1100], "hand": "open" }, "armR": { "e": [684, 980], "h": [624, 1100], "hand": "open" }, "sx": 1.07, "sy": 0.9, "bob": 30, "eyes": "closed", "brows": "angry", "look": [0.3, 0.2], "tilt": 0, "lean": 0, "restMouth": "X" },
+      "shock": { "armsFront": true, "armL": { "e": [150, 690], "h": [300, 590], "hand": "flat", "dir": -0.95 }, "armR": { "e": [874, 690], "h": [724, 590], "hand": "flat", "dir": -2.19 }, "sx": 0.94, "sy": 1.1, "bob": -48, "eyes": "pin", "eyeScale": 1.55, "brows": "up", "browRaise": 1.2, "shock": 1, "look": [0, 0], "tilt": 0, "lean": 0, "glassesUp": 1, "hairUp": 0, "mouthScale": 1.45, "restMouth": "OO" },
+      "shockLean": { "use": "shock", "lean": 0.07, "headDx": 16, "look": [1, 0], "sx": 1, "sy": 1.03, "bob": -24, "shock": 0.7, "eyeScale": 1.35, "glassesUp": 0.55, "hairUp": 0, "mouthScale": 1.3 },
+      "shockHold": { "use": "shock", "lean": 0.06, "headDx": 14, "look": [1, -0.2], "eyes": "wide", "eyeScale": 1.15, "sx": 1, "sy": 1, "bob": -12, "shock": 0, "glassesUp": 0, "hairUp": 0, "mouthScale": 1.1, "restMouth": "O" },
+      "deflate": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [694, 1000], "h": [652, 1150], "hand": "open" }, "armsFront": false, "sx": 1.04, "sy": 0.95, "bob": 14, "eyes": "half", "brows": "worried", "browRaise": 0, "eyeScale": 1, "lean": 0, "headDx": 0, "look": [0.6, 0.2], "shock": 0, "tilt": 0.04, "glassesUp": 0, "hairUp": 0, "mouthScale": 1, "restMouth": "frown" },
+      "relief": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [720, 1070], "h": [560, 930], "hand": "flat", "dir": -2.7 }, "eyes": "happy", "brows": "up", "browRaise": 0.35, "tilt": -0.1, "lean": -0.04, "sx": 1.02, "sy": 0.98, "bob": 4, "blush": 0.9, "look": [0, 0], "headDx": 0, "mouthScale": 1.2, "restMouth": "bigSmile", "sparkle": 1 },
+      "reliefSmile": { "use": "relief", "tilt": -0.05, "bob": 0, "sparkle": 0.7 },
       "worried": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [700, 1000], "h": [600, 860], "hand": "fist" }, "eyes": "open", "brows": "worried", "browRaise": 0.2, "look": [0.7, 0.1], "tilt": 0.05, "lean": 0.02, "sx": 1, "sy": 1, "bob": 0, "shock": 0, "headDx": 6, "blush": 0, "armsFront": false },
       "point": { "armL": { "e": [330, 1000], "h": [372, 1150], "hand": "open" }, "armR": { "e": [780, 880], "h": [880, 760], "hand": "point", "dir": -0.7 }, "eyes": "wide", "eyeScale": 1.1, "brows": "up", "browRaise": 0.6, "look": [1, -0.1], "tilt": -0.03, "lean": 0.03, "sx": 1, "sy": 1, "bob": -8, "shock": 0.3, "headDx": 8, "blush": 0, "armsFront": false }
     }
   },
   "gus": {
     "about": "Recurring skit character. Big, bald, deadpan floor trader with a grey walrus moustache, braces and a coffee mug. Never hurries. Not a real person.",
-    "design": { "headR": 228, "headY": 452, "skin": "#e3a47e", "body": { "top": 615, "bot": 1352, "w": 520, "color": "#8eb0d8", "style": "braces" }, "hair": { "style": "bald", "color": "#b8b2a8" }, "moustache": "#c4bdb2", "legs": { "top": 1320, "foot": 1488, "shoe": "#231c1a" }, "eyeX": 0.3, "eyeRx": 0.045, "eyeRy": 0.055, "browY": 0.2, "browW": 0.055 },
+    "design": { "headR": 228, "headY": 452, "skin": "#e3a47e", "body": { "top": 615, "bot": 1352, "w": 520, "color": "#8eb0d8", "style": "braces" }, "hair": { "style": "bald", "color": "#b8b2a8" }, "moustache": "#c4bdb2", "legs": { "top": 1320, "foot": 1488, "shoe": "#231c1a" }, "eyeX": 0.3, "eyeRx": 0.045, "eyeRy": 0.055, "browY": 0.2, "browW": 0.055, "armW": 2.7 },
     "worldH": 1.78,
     "light": { "x": -0.75, "y": 0.15, "color": "#ffd27a", "rim": 0.75, "dark": 0.28 },
     "talks": true,
@@ -33,15 +33,15 @@
     "breath": { "rate": 2.4, "amp": 4, "phase": 1 },
     "tint": 1,
     "rest": "mugIdle",
-    "voice": { "name": "Brian", "id": "nPczCjzI2devNBz1zQrb", "premade": true, "target": "0.65-0.86x the narrator (about 100-112 Hz)", "bandRatio": [0.65, 0.86], "measured": "about 120 Hz raw (vocal fry pulls the median about); 104.5 Hz = 0.80x after a -2.4 semitone PSOLA correction", "settings": { "stability": 0.6 }, "notes": "Deadpan. Short lines. He often reads ~120 Hz (0.9x): re-roll the seed, or try a lower, flatter delivery tag ([deadpan], [flat, low]) or higher stability. Don't pitch-shift; a take a little over 0.86x beats a shifted one." },
+    "voice": { "name": "Brian", "id": "nPczCjzI2devNBz1zQrb", "premade": true, "tag": "[deadpan]", "target": "a guide: about 0.65-0.86x the narrator", "bandRatio": [0.65, 0.86], "measured": "100.8 Hz = 0.84x Roger with [deadpan], stability 0.6, untouched", "settings": { "stability": 0.6 }, "notes": "Deadpan. Short lines. Start his line with [deadpan]; without it he often reads ~120 Hz and brighter. If a take sounds wrong, re-roll the seed; never pitch-shift." },
     "poses": {
-      "mugIdle": { "armL": { "e": [270, 1000], "h": [360, 930], "prop": "mug", "dir": 0.1 }, "armR": { "e": [790, 1000], "h": [740, 1180], "hand": "open" }, "eyes": "half", "look": [-0.4, 0.1], "brows": "neutral", "tilt": 0, "shrug": 0, "browRaise": 0, "armsFront": false, "sx": 1, "sy": 1, "bob": 0 },
-      "mugLook": { "use": "mugIdle", "look": [-1, 0], "tilt": 0.04 },
+      "mugIdle": { "armL": { "e": [270, 1000], "h": [360, 930], "prop": "mug", "dir": 0.1 }, "armR": { "e": [790, 1000], "h": [740, 1180], "hand": "open" }, "eyes": "half", "look": [-0.4, 0.1], "brows": "neutral", "tilt": 0, "shrug": 0, "browRaise": 0, "browL": 0, "browR": 0, "armsFront": false, "sx": 1, "sy": 1, "bob": 0, "restMouth": "X" },
+      "mugLook": { "use": "mugIdle", "eyes": "side", "look": [-1, 0], "tilt": 0.05, "browR": 0.35 },
       "mugUp": { "use": "mugIdle", "armL": { "e": [250, 940], "h": [350, 840], "prop": "mug", "dir": 0 }, "look": [-0.8, 0], "tilt": 0.03 },
-      "point": { "use": "mugUp", "armR": { "e": [850, 830], "h": [925, 700], "hand": "point", "dir": -0.75 }, "look": [0.6, -0.2], "tilt": -0.03, "bob": -6 },
-      "shrug": { "use": "mugUp", "shrug": 1, "armR": { "e": [870, 880], "h": [930, 780], "hand": "open", "dir": -0.9 }, "brows": "up", "browRaise": 0.5, "look": [-0.7, 0], "tilt": 0.06, "bob": -10 },
-      "sipStart": { "use": "mugIdle", "armsFront": true, "armL": { "e": [240, 860], "h": [400, 700], "prop": "mug", "dir": -0.3 }, "look": [0, 0], "tilt": 0 },
-      "sip": { "use": "mugIdle", "armsFront": true, "armL": { "e": [225, 800], "h": [430, 605], "prop": "mug", "dir": -0.5 }, "eyes": "closed", "tilt": -0.07, "look": [0, 0] },
+      "point": { "use": "mugUp", "armR": { "e": [860, 820], "h": [945, 690], "hand": "point", "dir": -0.75 }, "eyes": "half", "look": [0.6, -0.2], "tilt": -0.04, "bob": -8, "browL": 0.9, "restMouth": "flat" },
+      "shrug": { "use": "mugUp", "shrug": 1, "armR": { "e": [890, 870], "h": [960, 760], "hand": "open", "dir": -0.9 }, "brows": "up", "browRaise": 0.45, "browL": 0.45, "browR": 0, "eyes": "half", "look": [-0.7, 0], "tilt": 0.08, "bob": -12, "restMouth": "flat", "mouthScale": 1.1 },
+      "sipStart": { "use": "mugIdle", "armsFront": true, "armL": { "e": [240, 860], "h": [400, 700], "prop": "mug", "dir": -0.3 }, "look": [0, 0], "tilt": 0, "browL": 0.2 },
+      "sip": { "use": "mugIdle", "armsFront": true, "armL": { "e": [225, 800], "h": [430, 605], "prop": "mug", "dir": -0.5 }, "eyes": "closed", "tilt": -0.08, "look": [0, 0], "browL": 0, "brows": "up", "browRaise": 0.3 },
       "mugDown": { "use": "mugIdle", "armL": { "e": [270, 1010], "h": [380, 1000], "prop": "mug", "dir": 0.2 }, "look": [-0.9, 0.05], "brows": "neutral", "eyes": "open", "tilt": 0.02 },
       "lean": { "use": "mugIdle", "look": [-1, 0.1], "tilt": 0.07, "brows": "up", "browRaise": 0.3, "eyes": "open" }
     }
@@ -79,6 +79,6 @@
   "narrator": {
     "about": "Never on screen. One male American narrator, conversational.",
     "offscreen": true,
-    "voice": { "name": "Will", "id": "bIHbv24MWmeRgasZH58o", "premade": true, "target": "125-136 Hz median", "band": [125, 136], "measured": "116 Hz plain; 130.0 Hz with the [curious] delivery tag (eleven_v4); 130.8 Hz over the whole assembled open", "settings": { "stability": 0.4 }, "tag": "[curious]", "notes": "Read every narrator line with the [curious] tag at the start of the text. Plain reads sit near 115-119 Hz: re-roll the seed rather than pitch-shifting. [excited] shouts (217 Hz): never use it." }
+    "voice": { "name": "Roger", "id": "CwhRBWXzGAHq8TQ4Fs17", "premade": true, "target": "a guide: Roger's own natural range on statements, about 112-130 Hz (questions rise to ~160 Hz)", "band": [112, 130], "measured": "124.8 / 117.8 / 113.2 Hz on statements, 161 Hz on the title question, 120.6 Hz over the assembled Knight open; pitch spread 5.0 st on the audition line (the liveliest of Liam 4.0, Eric 4.7, Will 4.4)", "settings": { "stability": 0.45 }, "notes": "Untagged: no delivery tag. Picked from one-line auditions by how natural he sounds (pitch movement and an ear check), not by a pitch target; he reads about 130-145 wpm, so cut words to fit. Stitch his lines in order (tts.py does it). The reference narrators measured 125-136 Hz; Roger sits a little lower and that is fine. Never pitch-shift or time-stretch him." }
   }
 }

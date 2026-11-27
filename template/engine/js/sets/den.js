@@ -1,10 +1,15 @@
 // THE DEN: the recurring skit office (night window, bookshelf, framed charts, plant, whiteboard, filing cabinet, desk lamp).
 // Dot and Gus sit here by default; their side monitor shows one short reaction line.
-// cfg: { monitorText: "97 NEW", monitorColor: "#ff5a4a", cast: { dot: {...}, gus: {...} } }
+// Dressed with two tall floor lamps, a rug, a coat stand, a side table with a lamp, frames and warm window bokeh (dress.js).
+// cfg: { monitorText: "97 NEW", monitorColor: "#ff5a4a", cast: { dot: {...}, gus: {...} }, dress?: false }
+// foregrounds (shot "fg"): denFgTwo (plant, pen cup, papers for the two-shot), denFgGus (mug, plant), denFgDot (plant, phone)
+// The lamp between Dot and Gus is the key light for their faces: light Dot from screen right and Gus from screen left
+// (shot "light", see references/06-sets-and-colour.md).
 import * as THREE from 'three';
 import { mat, basic, box, cyl, plane, canvasTex, glow, bokehDisc, pointLight } from '../toon.js';
 import { rng } from '../util.js';
 import { FONT, HAND, paint, placeCast, fitSize } from './common.js';
+import { dress } from './dress.js';
 
 export function makeDen(cfg = {}, ctx) {
   const scene = new THREE.Scene();
@@ -43,7 +48,7 @@ export function makeDen(cfg = {}, ctx) {
   scene.add(box(0.26, 0.07, 0.11, mat(0x2d6a44, { emissive: 0x1a3a26, ei: 0.4 }), [0.05, DY + 0.25, 0.0], { outline: 0.012 }));
   const lampGlow = glow(0xffc070, 0.35, [0.05, DY + 0.22, 0.06], 0.6); scene.add(lampGlow);
   const lampL = pointLight(0xffb060, 7, 5, [0.05, DY + 0.22, -0.1]); scene.add(lampL);
-  { const pool = canvasTex(256, 256, (g) => { const r = g.createRadialGradient(128, 128, 4, 128, 128, 128); r.addColorStop(0, 'rgba(255,214,140,0.85)'); r.addColorStop(1, 'rgba(255,190,110,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); }); const pm = new THREE.MeshBasicMaterial({ map: pool.tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); scene.add(plane(1.8, 0.9, pm, [0.05, DY + 0.031, 0.32], [-Math.PI / 2, 0, 0])); }
+  { const pool = canvasTex(256, 256, (g) => { const r = g.createRadialGradient(128, 128, 4, 128, 128, 128); r.addColorStop(0, 'rgba(255,214,140,0.5)'); r.addColorStop(1, 'rgba(255,190,110,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); }); const pm = new THREE.MeshBasicMaterial({ map: pool.tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }); scene.add(plane(1.8, 0.9, pm, [0.05, DY + 0.031, 0.32], [-Math.PI / 2, 0, 0])); }
   const monTex = canvasTex(640, 400, null);
   const mon = new THREE.Group();
   mon.add(box(0.95, 0.6, 0.06, 0x16171c, [0, 0, 0], { outline: 0.012 }));
@@ -58,14 +63,17 @@ export function makeDen(cfg = {}, ctx) {
   scene.add(new THREE.HemisphereLight(0x8a90b8, 0x2a1810, 0.28));
   scene.add(pointLight(0xffd4a0, 2, 8, [0, 2.6, 1.6]));
   for (const x of [-1.9, 2.15]) { scene.add(box(0.14, 0.2, 0.08, mat(0x8a6a2a, { emissive: 0xffc070, ei: 0.6 }), [x, 1.7, -2.5], { outline: 0.01 })); scene.add(glow(0xffc070, 0.7, [x, 1.85, -2.45], 0.55)); scene.add(pointLight(0xffb060, 2.5, 3, [x, 1.9, -2.3])); }
+  const DR = dress('den', scene, cfg);
   const monText = cfg.monitorText ?? '';
   return {
-    scene, cards,
+    scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards,
     update(st) {
       const T = st.T;
+      DR.update(T);
       night.redraw(T);
       for (const [b, ph, o] of bok) b.material.opacity = o * (0.75 + 0.25 * Math.sin(T * 1.3 + ph));
-      const fl = 1 + 0.04 * Math.sin(T * 17) * Math.sin(T * 3.1); lampL.intensity = 7 * fl; lampGlow.material.opacity = 0.6 * fl;
+      // the desk lamp is kept low (5.5) so its bloom doesn't wash out the faces between it
+      const fl = 1 + 0.04 * Math.sin(T * 17) * Math.sin(T * 3.1); lampL.intensity = 5.5 * fl; lampGlow.material.opacity = 0.6 * fl;
       plant.rotation.z = Math.sin(T * 0.8) * 0.02;
       monTex.draw((g, w, h) => { g.fillStyle = '#0a1612'; g.fillRect(0, 0, w, h); g.font = `64px ${FONT}`; if (g.measureText(monText).width > w - 40) g.font = `${fitSize(g, monText, 64, w - 40)}px ${FONT}`; g.fillStyle = cfg.monitorColor || '#ff5a4a'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(monText, w / 2, h / 2); }, 1);
     },

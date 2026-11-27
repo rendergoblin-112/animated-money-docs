@@ -4,18 +4,24 @@
 //   sign: "COMPANY NAME" (wall sign), signColor,
 //   board: { label: "MORE THAN", value: 460000000, currency: "$" }   rolled by the shot cue boardRoll: [t0, t1]
 //   boardTicker: ["ABC ▼", ...]   scrolling line on the board (fictional or factual tickers)
-//   tickers: ["PIKE", ...]        16 names on the side ticker walls (keep them fictional)
+//   tickers: ["VELO", ...]        16 names on the side ticker walls and the LED strip (default: TK_DEFAULT, invented)
 //   clock: { h: 9, m: 30 }         the minute hand snaps onto this time at the shot cue clockAt
 //   monitor: { title, count, rows: [...], note, status, perRow }   hero monitor, counted up by the shot cue orders: [t0, t1]
 //   cast: { castId: { pos, worldH } }  defaults to the bell trader by the clock
+//   dress: false                   no room dressing (see dress.js)
 // }
+// foregrounds (shot "fg"): floorFgWide (lamp, plant, desk for the wide), floorFgBoard (pendant, monitor for the board),
+//                           floorFgClock (desk with lamp for the clock wall), floorFgOrders (mug, lamp for the hero monitor)
 import * as THREE from 'three';
 import { mat, basic, box, cyl, plane, canvasTex, glow, pointLight } from '../toon.js';
 import { Card, drawPerson, bgPerson } from '../chars.js';
 import { rng, clamp, easeOut, fmtMoney, fmtInt, noise1 } from '../util.js';
 import { INKC, FONT, HAND, inkText, fitSize, paint, windowsTex, chartTex, paperField, placeCast } from './common.js';
+import { dress } from './dress.js';
 
-const TK_DEFAULT = ['PIKE', 'QUAY', 'RIFT', 'MOSS', 'NOVA', 'HALO', 'IRON', 'JOLT', 'LUME', 'DYNA', 'CRUX', 'GRID', 'KITE', 'FLUX', 'BOLT', 'OAK'];
+// invented symbols for the side ticker walls and the LED strip (made up for this skill: not real tickers, and not copied from
+// anyone's video). A project can give its own 16 with "tickers"; keep them invented unless a real one is a sourced fact.
+const TK_DEFAULT = ['VELO', 'ORBA', 'TANZ', 'MIRA', 'QUIL', 'ZEPH', 'BRAK', 'CIVO', 'DUNE', 'EPIX', 'FENN', 'WREN', 'HUXT', 'JADE', 'KRON', 'LYNX'];
 
 export function makeFloor(cfg = {}, ctx) {
   const TK = cfg.tickers || TK_DEFAULT;
@@ -116,11 +122,12 @@ export function makeFloor(cfg = {}, ctx) {
   const papersNear = paperField(scene, 6, 9, [-1.2, 1.2, 1.6, 3.6, -4.6, -3.4], { size: 0.25 });
   // clock.label: "" draws no time label (use when the time isn't a sourced fact)
   const clockLabel = CLOCK.label ?? `${CLOCK.h}:${String(CLOCK.m).padStart(2, '0')}`;
-
+  const DR = dress('floor', scene, cfg);
   return {
-    scene, cards,
+    scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards,
     update(st) {
       const T = st.T, cue = st.cue || {};
+      DR.update(T);
       // a shot can show a different figure on the same board: cue.board = { label, value, from, currency }
       const BD = cue.board ? { ...BOARD, from: 0, ...cue.board } : { ...BOARD, from: 0 };
       const c0 = cue.boardRoll; let v = 0, rolling = false;

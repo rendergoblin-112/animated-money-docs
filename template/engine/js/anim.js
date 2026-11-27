@@ -22,10 +22,14 @@ const deepMerge = (a, b) => { if (!b) return a; const o = { ...a }; for (const k
 // keys: [[t, poseObjOrName, dur?, ease?]] -- the move INTO a key starts at key.t and lasts dur (default 0.2 s)
 export function interp(keys, lib, t, base = {}) {
   const tq = Math.floor(t * 15) / 15;
-  const P = (p) => {
+  // a pose named by string inherits its `use` chain too (so a pose built on "shock" keeps shock's arms)
+  const res = (p) => {
     if (typeof p === 'string' && !lib[p]) throw new Error(`unknown pose "${p}" (poses: ${Object.keys(lib).join(', ')})`);
-    return deepMerge(base, typeof p === 'string' ? lib[p] : (p.use ? deepMerge(lib[p.use], p) : p));
+    const o = typeof p === 'string' ? lib[p] : p;
+    if (o.use && !lib[o.use]) throw new Error(`pose uses unknown pose "${o.use}" (poses: ${Object.keys(lib).join(', ')})`);
+    return o.use ? deepMerge(res(o.use), o) : o;
   };
+  const P = (p) => deepMerge(base, res(p));
   let i = 0; for (let j = 0; j < keys.length; j++) if (keys[j][0] <= tq) i = j;
   if (tq < keys[0][0]) return P(keys[0][1]);
   const [k0, p1, dur = 0.2, ease = 'io'] = keys[i];

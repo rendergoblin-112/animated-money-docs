@@ -5,10 +5,13 @@
 //        scales: { left: "EXCHANGE", right: "", tilt: 0.32 }   tilt > 0 tips the LEFT pan down (more weight/blame on the left) }
 // shot cues: gavelAt: t (gavel bangs, the block jumps)   tiltAt: t (scales tip to cfg.scales.tilt with an overshoot)
 //            tilted: true (already tipped)   paperAt: t (the claim papers slap down onto the table)
+// Dressed with brass pendants, a law-book shelf, plants, counsel's chairs and a clerk's lamp (dress.js; "dress": false = plain).
+// foregrounds (shot "fg"): courtFgTitle (a brass pendant by the lens + a lectern with books, for the bench shot), courtFgTable (jug, books)
 import * as THREE from 'three';
 import { mat, basic, box, cyl, plane, canvasTex, glow, pointLight, INK } from '../toon.js';
 import { rng, clamp } from '../util.js';
 import { INKC, FONT, HAND, paint, fitSize, inkText, placeCast } from './common.js';
+import { dress } from './dress.js';
 
 export function makeCourt(cfg = {}, ctx) {
   const SCL = { left: '', right: '', tilt: 0.3, ...(cfg.scales || {}) };
@@ -102,10 +105,12 @@ export function makeCourt(cfg = {}, ctx) {
   scene.add(pointLight(0xffc890, 1.6, 3, [-0.3, 1.6, 1.1])); // a reading light over counsel's table
   for (const x of [-2.6, 2.6]) { scene.add(box(0.16, 0.24, 0.08, mat(0x8a6a2a, { emissive: 0xffc070, ei: 0.6 }), [x, 2.3, -3.35], { outline: 0.01 })); scene.add(glow(0xffc070, 0.8, [x, 2.45, -3.3], 0.5)); scene.add(pointLight(0xffb060, 3, 4, [x, 2.4, -3.0])); }
   const cards = placeCast(scene, ctx, cfg.cast ?? {});
+  const DR = dress('court', scene, cfg);
   return {
-    scene, cards,
+    scene, setFg: DR.set, fgGroups: Object.keys(DR.groups), cards,
     update(st) {
       const T = st.T, cue = st.cue || {};
+      DR.update(T);
       // gavel: lift, then bang down onto the block
       let ga = 0.15, jump = 0;
       if (cue.gavelAt != null) { const u = T - cue.gavelAt; if (u > -0.25 && u < 0) ga = 0.15 + 0.9 * (1 + u / 0.25); else if (u >= 0 && u < 0.08) { ga = -0.25; jump = 0.02 * (1 - u / 0.08); } else if (u >= 0.08 && u < 0.4) ga = -0.25 + 0.4 * ((u - 0.08) / 0.32); }

@@ -1,11 +1,16 @@
-// 3D set helpers: matte lit materials, boxes with an inked outline (inverted hull), canvas textures, glow sprites.
+// 3D set helpers: CEL-SHADED lit materials (MeshToonMaterial with a hard 3-step ramp, so walls, desks, racks and props get the
+// flat two-tone shading the characters have), boxes with an inked outline (inverted hull; the screen-space brush ink pass in
+// main.js draws the rest), canvas textures, glow sprites.
 import * as THREE from 'three';
 
 export const INK = 0x121014;
 const inkMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+// the cel ramp: shadow tone, a narrow mid band, lit tone (nearest filtering = hard terminators)
+const ramp = (() => { const d = new Uint8Array([92, 92, 92, 255, 168, 168, 168, 255, 255, 255, 255, 255]); const t = new THREE.DataTexture(d, 3, 1, THREE.RGBAFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; })();
+export const CEL_RAMP = ramp;
 
 export function mat(color, o = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? 0.9, metalness: o.metal ?? 0, emissive: o.emissive ?? 0x000000, emissiveIntensity: o.ei ?? 1, map: o.map ?? null, emissiveMap: o.emissiveMap ?? null, transparent: !!o.transparent, opacity: o.opacity ?? 1 });
+  return new THREE.MeshToonMaterial({ color, gradientMap: ramp, emissive: o.emissive ?? 0x000000, emissiveIntensity: o.ei ?? 1, map: o.map ?? null, emissiveMap: o.emissiveMap ?? null, transparent: !!o.transparent, opacity: o.opacity ?? 1 });
 }
 export function basic(color, o = {}) {
   return new THREE.MeshBasicMaterial({ color, map: o.map ?? null, transparent: !!o.transparent, opacity: o.opacity ?? 1, depthWrite: o.depthWrite ?? true, side: o.side ?? THREE.FrontSide, toneMapped: false, blending: o.add ? THREE.AdditiveBlending : THREE.NormalBlending });
@@ -17,8 +22,8 @@ export function box(w, h, d, material, pos = [0, 0, 0], o = {}) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof material === 'object' && material.isMaterial ? material : mat(material, o));
   m.castShadow = o.cast ?? false; m.receiveShadow = o.receive ?? true;
   g.add(m);
-  const t = o.outline ?? 0.012;
-  if (t > 0) { const hull = new THREE.Mesh(new THREE.BoxGeometry(w + 2 * t, h + 2 * t, d + 2 * t), inkMat); g.add(hull); }
+  const t = (o.outline ?? 0.012) * 1.5;
+  if (t > 0) { const hull = new THREE.Mesh(new THREE.BoxGeometry(w + 2 * t, h + 2 * t, d + 2 * t), inkMat); hull.userData.hull = true; g.add(hull); }
   g.position.set(pos[0], pos[1] + (o.center ? 0 : h / 2), pos[2]);
   g.userData.mesh = m;
   return g;
@@ -27,8 +32,8 @@ export function cyl(rt, rb, h, material, pos = [0, 0, 0], o = {}) {
   const g = new THREE.Group();
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, o.seg ?? 28, 1, !!o.open), typeof material === 'object' && material.isMaterial ? material : mat(material, o));
   g.add(m);
-  const t = o.outline ?? 0.012;
-  if (t > 0) g.add(new THREE.Mesh(new THREE.CylinderGeometry(rt + t, rb + t, h + 2 * t, o.seg ?? 28, 1, !!o.open), inkMat));
+  const t = (o.outline ?? 0.012) * 1.5;
+  if (t > 0) { const hull = new THREE.Mesh(new THREE.CylinderGeometry(rt + t, rb + t, h + 2 * t, o.seg ?? 28, 1, !!o.open), inkMat); hull.userData.hull = true; g.add(hull); }
   g.position.set(pos[0], pos[1] + h / 2, pos[2]);
   g.userData.mesh = m;
   return g;

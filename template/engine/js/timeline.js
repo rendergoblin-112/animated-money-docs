@@ -75,6 +75,12 @@ export function buildShots(V, spec, fps = 30) {
         sh.act[who] = R.deep(k);
       }
     }
+    // light: { castId: { x, y, color, rim, dark } } per shot, or the name of a shared set of lights in shots.json "lights"
+    if (typeof sh.light === 'string') {
+      const L = (spec.lights || {})[sh.light];
+      if (!L) throw new Error(`shot ${raw.id}: light "${sh.light}" is not defined in shots.json "lights"`);
+      sh.light = L;
+    }
     if (raw.type === 'card') {
       // words: [[shownText, startWord, endWord?], ...] from one line (line: "NA")
       if (!sh.segs) {

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""pitch.py <audio>... [--range LO HI] [--ref HZ] : median voiced pitch (librosa pyin) and IQR for each file.
+"""pitch.py <audio>... [--range LO HI] [--ref HZ] : median voiced pitch (librosa pyin), IQR and pitch movement for each file.
   --range LO HI   search range in Hz (default 65 400). Use 150 500 for high voices: a low floor locks onto vocal fry.
-  --ref HZ        also print each file's ratio to a reference pitch (the narrator's median), for the 1.6-1.9x / 0.65-0.86x bands.
+  --ref HZ        also print each file's ratio to a reference pitch (the narrator's median), for the 1.6-1.9x / 0.65-0.86x guides.
+  spread          semitones between the 10th and 90th percentile: how much the voice moves. Use it to compare auditions
+                  (round 3 picked Roger, 5.0 st, over Eric 4.7 and Liam 4.0); a flat read is under ~3.5.
+This only MEASURES. The skill has no pitch-shifting tool on purpose: shifted or stretched takes sound processed. Pick the
+take that sounds most natural; the bands are a guide for spotting an odd take, never a reason to process one.
 pitch.py --previews <voices_list.json> <Name1,Name2> [outdir] : download those voices' free preview mp3s and measure them."""
 import json, os, sys, urllib.request
 import numpy as np, librosa
@@ -13,7 +17,7 @@ def f0(path, lo=65, hi=400):
     f, v, _ = librosa.pyin(y, fmin=lo, fmax=hi, sr=sr, frame_length=1024)
     f = f[v & ~np.isnan(f)]
     if len(f) == 0: return None
-    return float(np.median(f)), float(np.percentile(f, 25)), float(np.percentile(f, 75)), len(y) / sr
+    return float(np.median(f)), float(np.percentile(f, 25)), float(np.percentile(f, 75)), len(y) / sr, float(12 * np.log2(np.percentile(f, 90) / np.percentile(f, 10)))
 
 
 def main():
@@ -31,13 +35,13 @@ def main():
                 p = os.path.join(out, nm + ".mp3")
                 if not os.path.exists(p): open(p, "wb").write(urllib.request.urlopen(v["preview"], timeout=60, context=ssl_context()).read())
                 r = f0(p, lo, hi)
-                print(f"{nm:10} {v['id']}  median {r[0]:6.1f} Hz  IQR {r[1]:.0f}-{r[2]:.0f}" if r else f"{nm}: no voiced frames")
+                print(f"{nm:10} {v['id']}  median {r[0]:6.1f} Hz  IQR {r[1]:.0f}-{r[2]:.0f}  spread {r[4]:.1f} st" if r else f"{nm}: no voiced frames")
         return
     for p in a:
         r = f0(p, lo, hi)
         if not r: print(f"{p}: no voiced frames"); continue
         extra = f"  = {r[0] / ref:.2f}x ref" if ref else ""
-        print(f"{os.path.basename(p):32} median {r[0]:6.1f} Hz  IQR {r[1]:.0f}-{r[2]:.0f}  len {r[3]:.2f}s{extra}")
+        print(f"{os.path.basename(p):32} median {r[0]:6.1f} Hz  IQR {r[1]:.0f}-{r[2]:.0f}  spread {r[4]:.1f} st  len {r[3]:.2f}s{extra}")
 
 
 if __name__ == "__main__":

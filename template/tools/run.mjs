@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // node template/tools/run.mjs <tool.py> [args...] : run one of the Python tools with the skill's Python (.venv, pydeps or python3;
-// see pyenv.mjs), e.g.  node template/tools/run.mjs pitch.py my-story/vo/NA_will_1.mp3
+// see pyenv.mjs), e.g.  node template/tools/run.mjs pitch.py my-story/vo/NA_roger_1.mp3
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -64,7 +64,9 @@ def main():
     print(f"hook line ends {band(hook['end'], 3, 10)} s   (3-10)")
     if chap: print(f"chapter card {chap[0]['start']:.2f}-{chap[0]['end']:.2f} s ({band(chap[0]['end'] - chap[0]['start'], 1.9, 2.2)} s)   (1.9-2.2)")
     wds = sum(len(l["words"]) for l in V["lines"]); span = V["lines"][-1]["end"] - V["lines"][0]["start"]
-    print(f"words/min {band(wds / span * 60, 148, 179, '{:.0f}')}   (148-179)")
+    # the measured opens read 148-179 wpm; a natural, unstretched read on these voices lands about 130-170. Below 125 the script
+    # has room for words; above 170 cut words. Never time-stretch the voice to move this number (08-voices.md).
+    print(f"words/min {band(wds / span * 60, 125, 170, '{:.0f}')}   (125-170 natural read; the measured opens 148-179: cut words, never speed up)")
 
 
 if __name__ == "__main__":

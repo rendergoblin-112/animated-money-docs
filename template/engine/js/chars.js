@@ -1,11 +1,17 @@
 // Flat, outlined, drawn characters on billboard cards placed in the lit 3D sets (references/04-characters-and-mouths.md).
 // Round head 32-42% of height, bean body with no neck, single-stroke arms/legs, 3-4 stroke fingers, dot eyes, arc brows,
-// no nose, black round-capped line ~2% of head diameter, flat fill + soft radial gradient + a rim-light crescent on the lit side.
+// no nose. Every ink line goes through the brush renderer (brush.js): bold (0.066 x head radius), swelling and thinning along
+// the stroke, tapered at open ends. Shapes are lit from the scene's nearest lamp (litFill: a hard warm rim crescent on the lamp
+// side, a soft cool shadow crescent on the far side, a warm glow); the light comes from the cast data or the shot ("light").
 // Characters ACT: every frame is drawn from interpolated pose parameters (arms, hands, lean, squash, head tilt), so there are
 // in-betweens, not pose swaps. Hands can grip props (mug, drive, papers, phone), sit flat on a head or chest, point, or make fists.
-// Mouths: 6 drawn shapes timed to the sounds of the words: X closed, A small open, E wide/teeth, D open, O round, F teeth-on-lip.
-// The designs themselves (colours, hair, glasses...) are data: template/cast/default.json.
+// Reactions are their own drawings: eye kinds (open, wide, pin, side, half, closed, happy), per-brow raise, mouth scale,
+// glasses pop, sparkles, surprise marks.
+// Mouths: 6 drawn shapes timed to the sounds of the words: X closed, A small open, E wide/teeth, D open, O round, F teeth-on-lip,
+// plus rest mouths (smile, flat, frown, bigSmile, OO scream).
+// The designs themselves (colours, hair, glasses, arm weight...) are data: template/cast/default.json.
 import * as THREE from 'three';
+import { brushify } from './brush.js';
 
 const INK = '#141014';
 const hexToRgb = (h) => { h = h.replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); };
@@ -15,17 +21,30 @@ export const shade = (c, t) => (t >= 0 ? mix(c, '#ffffff', t) : mix(c, '#000000'
 
 // ------------------------------------------------------------------ primitives
 function inkStroke(g, lw) { g.lineWidth = lw; g.strokeStyle = INK; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); }
+// Scene lighting on every drawn shape. L = the nearest practical light as seen from the character: direction (x, y in
+// -1..1, +x = toward screen right), colour, rim strength, shadow depth. Layers, all clipped to the shape:
+//  1. a hard BRIGHT RIM crescent on the lit edge (the shape shifted away from the light leaves it uncovered),
+//  2. a soft cool SHADOW crescent on the far side (a blurred copy of the shape pushed toward the light is lit, the rest is shade),
+//  3. a warm glow spilling in from the light side.
 function litFill(g, path, base, L, box, lw, o = {}) {
   const [x0, y0, x1, y1] = box; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, r = Math.max(x1 - x0, y1 - y0) / 2;
-  const lx = L.x ?? -0.6, ly = L.y ?? -0.5;
+  const lx = L.x ?? -0.6, ly = L.y ?? -0.5, ln = Math.hypot(lx, ly) || 1, ux = lx / ln, uy = ly / ln;
+  const warm = L.color || '#ffe2b8';
+  const lit = shade(mix(base, warm, 0.14), 0.0);
+  const rimC = shade(mix(base, warm, 0.7), 0.3);
+  const shadowC = shade(mix(base, '#3d2f5c', 0.2), -((L.dark ?? 0.26) + 0.1));
+  const rw = r * (o.rimW ?? 0.07) * (0.6 + 0.5 * (L.rim ?? 0.7));
+  const so = r * (o.shadow ?? 0.36);
+  const big = [x0 - 40, y0 - 40, x1 - x0 + 80, y1 - y0 + 80];
   g.save(); path(); g.clip();
-  const rim = shade(mix(base, L.color || '#ffe2b8', Math.min(1, (L.rim ?? 0.55) + 0.25)), 0.3);
-  g.fillStyle = rim; g.fillRect(x0 - 10, y0 - 10, x1 - x0 + 20, y1 - y0 + 20);
-  const rw = (o.rimW ?? 0.08) * 1.35;
-  g.translate(-lx * r * rw, -ly * r * rw * 0.55);
-  const gr = g.createRadialGradient(cx + lx * r * 0.4, cy + ly * r * 0.45, r * 0.05, cx, cy, r * 1.15);
-  gr.addColorStop(0, shade(mix(base, L.color || '#ffe2b8', 0.2), 0.14)); gr.addColorStop(0.5, base); gr.addColorStop(1, shade(base, -((L.dark ?? 0.22) + 0.16)));
-  g.fillStyle = gr; path(); g.fill();
+  g.fillStyle = rimC; g.fillRect(...big);
+  g.save(); g.translate(-ux * rw, -uy * rw); path(); g.restore(); g.clip();
+  g.fillStyle = shadowC; g.fillRect(...big);
+  g.save(); g.filter = `blur(${Math.max(2, Math.round(r * 0.045))}px)`; g.translate(ux * so * 0.9, uy * so * 0.9); path(); g.fillStyle = lit; g.fill(); g.restore();
+  const gx = cx + ux * r * 0.75, gy = cy + uy * r * 0.75;
+  const gr = g.createRadialGradient(gx, gy, 0, gx, gy, r * 1.25);
+  gr.addColorStop(0, warm + '40'); gr.addColorStop(0.55, warm + '14'); gr.addColorStop(1, warm + '00');
+  g.fillStyle = gr; g.fillRect(...big);
   g.restore();
   if (lw > 0) { path(); inkStroke(g, lw); }
 }
@@ -51,19 +70,19 @@ function strokeLine(g, pts, lw, color = INK) {
 // grip = 3 curled fingers + thumb wrapping something held at the hand point
 function hand(g, e, h, lw, kind = 'open', dir = null) {
   const a = dir ?? Math.atan2(h[1] - e[1], h[0] - e[0]);
-  if (kind === 'fist') { g.beginPath(); g.arc(h[0], h[1], lw * 1.7, 0, Math.PI * 2); g.fillStyle = INK; g.fill(); return; }
+  if (kind === 'fist') { g.beginPath(); g.arc(h[0], h[1], lw * 2.2, 0, Math.PI * 2); g.fillStyle = INK; g.fill(); return; }
   if (kind === 'flat') {
     const nx = Math.cos(a + Math.PI / 2), ny = Math.sin(a + Math.PI / 2);
-    for (let i = 0; i < 4; i++) { const o = (i - 1.5) * lw * 1.5; const p0 = [h[0] + nx * o, h[1] + ny * o]; strokeLine(g, [p0, [p0[0] + Math.cos(a) * lw * 3.6, p0[1] + Math.sin(a) * lw * 3.6]], lw * 1.35); }
+    for (let i = 0; i < 4; i++) { const o = (i - 1.5) * lw * 1.5; const p0 = [h[0] + nx * o, h[1] + ny * o]; g.taper = [0, 0.6]; strokeLine(g, [p0, [p0[0] + Math.cos(a) * lw * 3.8, p0[1] + Math.sin(a) * lw * 3.8]], lw * 1.6); }
     return;
   }
   if (kind === 'grip') {
-    for (let i = 0; i < 3; i++) { const o = (i - 1) * lw * 1.6; const nx = Math.cos(a + Math.PI / 2), ny = Math.sin(a + Math.PI / 2); const p0 = [h[0] + nx * o, h[1] + ny * o]; const p1 = [p0[0] + Math.cos(a) * lw * 2.4, p0[1] + Math.sin(a) * lw * 2.4]; const p2 = [p1[0] + Math.cos(a + 1.9) * lw * 1.6, p1[1] + Math.sin(a + 1.9) * lw * 1.6]; strokeLine(g, [p0, p1, p2], lw * 1.05); }
-    strokeLine(g, [h, [h[0] + Math.cos(a - 1.0) * lw * 2.8, h[1] + Math.sin(a - 1.0) * lw * 2.8]], lw * 1.05);
+    for (let i = 0; i < 3; i++) { const o = (i - 1) * lw * 1.6; const nx = Math.cos(a + Math.PI / 2), ny = Math.sin(a + Math.PI / 2); const p0 = [h[0] + nx * o, h[1] + ny * o]; const p1 = [p0[0] + Math.cos(a) * lw * 2.4, p0[1] + Math.sin(a) * lw * 2.4]; const p2 = [p1[0] + Math.cos(a + 1.9) * lw * 1.6, p1[1] + Math.sin(a + 1.9) * lw * 1.6]; strokeLine(g, [p0, p1, p2], lw * 1.4); }
+    strokeLine(g, [h, [h[0] + Math.cos(a - 1.0) * lw * 2.8, h[1] + Math.sin(a - 1.0) * lw * 2.8]], lw * 1.4);
     return;
   }
-  const n = kind === 'point' ? 1 : 4, spread = kind === 'point' ? 0 : 0.5, len = lw * (kind === 'point' ? 6.5 : 5);
-  for (let i = 0; i < n; i++) { const t = n === 1 ? 0 : (i / (n - 1) - 0.5) * 2; const b = a + t * spread; strokeLine(g, [h, [h[0] + Math.cos(b) * len, h[1] + Math.sin(b) * len]], lw * 1.4); }
+  const n = kind === 'point' ? 1 : 4, spread = kind === 'point' ? 0 : 0.55, len = lw * (kind === 'point' ? 6.5 : 5);
+  for (let i = 0; i < n; i++) { const t = n === 1 ? 0 : (i / (n - 1) - 0.5) * 2; const b = a + t * spread; g.taper = [0, 0.7]; strokeLine(g, [h, [h[0] + Math.cos(b) * len, h[1] + Math.sin(b) * len]], lw * 1.75); }
   if (kind === 'point') strokeLine(g, [h, [h[0] + Math.cos(a + 1.3) * len * 0.5, h[1] + Math.sin(a + 1.3) * len * 0.5]], lw * 0.9);
 }
 
@@ -99,14 +118,22 @@ function drawProp(g, kind, x, y, r, L, t, lw, label = '') {
 
 // ------------------------------------------------------------------ faces
 function eyes(g, cx, cy, r, S, D) {
-  const ex = r * (D.eyeX ?? 0.3), ey = cy + r * (D.eyeY ?? -0.02), lw = r * 0.045;
+  const ex = r * (D.eyeX ?? 0.3), ey = cy + r * (D.eyeY ?? -0.02), lw = r * 0.062;
   const lk = S.look || [0, 0];
   for (const s of [-1, 1]) {
     const x = cx + s * ex + lk[0] * r * 0.06, y = ey + lk[1] * r * 0.05;
     const kind = S.blink ? 'closed' : (S.eyes || 'open');
     if (kind === 'closed') strokeLine(g, [[x - r * 0.08, y], [x, y + r * 0.04], [x + r * 0.08, y]], lw);
     else if (kind === 'happy') strokeLine(g, [[x - r * 0.08, y + r * 0.03], [x, y - r * 0.05], [x + r * 0.08, y + r * 0.03]], lw);
-    else if (kind === 'wide') {
+    else if (kind === 'pin') {
+      const sc = S.eyeScale || 1.4;
+      g.beginPath(); g.ellipse(x, y - r * 0.02, r * 0.135 * sc, r * 0.16 * sc, 0, 0, Math.PI * 2); g.fillStyle = '#fffdf6'; g.fill(); inkStroke(g, lw);
+      g.beginPath(); g.arc(x + lk[0] * r * 0.03, y + lk[1] * r * 0.03, r * 0.032, 0, Math.PI * 2); g.fillStyle = INK; g.fill();
+    } else if (kind === 'side') {
+      g.beginPath(); g.ellipse(x, y + r * 0.02, r * 0.085, r * 0.05, 0, 0, Math.PI * 2); g.fillStyle = '#fbf8f0'; g.fill(); inkStroke(g, lw * 0.8);
+      g.beginPath(); g.arc(x + (lk[0] >= 0 ? 1 : -1) * r * 0.045, y + r * 0.025, r * 0.032, 0, Math.PI * 2); g.fillStyle = INK; g.fill();
+      strokeLine(g, [[x - r * 0.1, y - r * 0.02], [x + r * 0.1, y - r * 0.02]], lw * 1.1);
+    } else if (kind === 'wide') {
       const sc = S.eyeScale || 1;
       g.beginPath(); g.ellipse(x, y, r * 0.12 * sc, r * 0.14 * sc, 0, 0, Math.PI * 2); g.fillStyle = '#fbf8f0'; g.fill(); inkStroke(g, lw * 0.8);
       g.beginPath(); g.ellipse(x + lk[0] * r * 0.035, y + lk[1] * r * 0.035, r * 0.045, r * 0.055, 0, 0, Math.PI * 2); g.fillStyle = INK; g.fill();
@@ -122,15 +149,23 @@ function eyes(g, cx, cy, r, S, D) {
   const raise = S.browRaise || 0;
   for (const s of [-1, 1]) {
     const x = cx + s * ex;
-    const tilt = br === 'worried' ? -0.05 : br === 'angry' ? 0.06 : 0;
-    const up = (br === 'up' ? -r * 0.08 : br === 'worried' ? -r * 0.045 : 0) - raise * r * 0.08;
-    strokeLine(g, [[x - bw, by + up - tilt * r * s * -1], [x, by + up - r * 0.035], [x + bw, by + up + tilt * r * s * -1]], r * (D.browW ?? 0.04));
+    const tilt = br === 'worried' ? -0.08 : br === 'angry' ? 0.09 : 0;
+    const own = s < 0 ? (S.browL ?? 0) : (S.browR ?? 0);   // per-brow raise: one-brow-up deadpan
+    const up = (br === 'up' ? -r * 0.09 : br === 'worried' ? -r * 0.05 : 0) - (raise + own) * r * 0.09;
+    g.taper = [0.5, 0.75];
+    strokeLine(g, [[x - bw, by + up - tilt * r * s * -1], [x, by + up - r * 0.04], [x + bw, by + up + tilt * r * s * -1]], r * (D.browW ?? 0.04) * 1.45);
   }
 }
-function mouth(g, cx, my, r0, kind, D) {
-  const r = r0 * 1.25, lw = r0 * 0.045, dark = '#4a1518', tongue = '#e0717a', teeth = '#fbf7ee';
+function mouth(g, cx, my, r0, kind, D, sc = 1) {
+  const r = r0 * 1.25 * sc, lw = r0 * 0.06, dark = '#4a1518', tongue = '#e0717a', teeth = '#fbf7ee';
   const k = kind || 'X';
-  if (k === 'X' || k === 'smile') strokeLine(g, [[cx - r * 0.13, my - r * 0.01], [cx, my + r * (k === 'smile' ? 0.09 : 0.035)], [cx + r * 0.13, my - r * 0.01]], lw);
+  if (k === 'flat') { g.taper = [0.4, 0.4]; strokeLine(g, [[cx - r * 0.17, my + r * 0.01], [cx + r * 0.17, my + r * 0.01]], lw); }
+  else if (k === 'bigSmile') {
+    const w = r * 0.24, h = r * 0.22;
+    const p = () => { g.beginPath(); g.moveTo(cx - w, my - r * 0.03); g.quadraticCurveTo(cx, my + r * 0.02, cx + w, my - r * 0.03); g.bezierCurveTo(cx + w * 0.9, my + h, cx - w * 0.9, my + h, cx - w, my - r * 0.03); g.closePath(); };
+    p(); g.fillStyle = dark; g.fill(); g.save(); p(); g.clip(); g.fillStyle = teeth; g.fillRect(cx - w, my - r * 0.06, 2 * w, r * 0.08);
+    g.beginPath(); g.ellipse(cx, my + h * 0.85, w * 0.55, h * 0.38, 0, 0, Math.PI * 2); g.fillStyle = tongue; g.fill(); g.restore(); p(); inkStroke(g, lw);
+  } else if (k === 'X' || k === 'smile') strokeLine(g, [[cx - r * 0.13, my - r * 0.01], [cx, my + r * (k === 'smile' ? 0.09 : 0.035)], [cx + r * 0.13, my - r * 0.01]], lw);
   else if (k === 'frown') strokeLine(g, [[cx - r * 0.12, my + r * 0.04], [cx, my - r * 0.03], [cx + r * 0.12, my + r * 0.04]], lw);
   else if (k === 'A') {
     g.beginPath(); g.ellipse(cx, my + r * 0.02, r * 0.1, r * 0.07, 0, 0, Math.PI * 2); g.fillStyle = dark; g.fill();
@@ -152,7 +187,7 @@ function mouth(g, cx, my, r0, kind, D) {
     g.fillStyle = teeth; g.fillRect(cx - w, my - r * 0.08, 2 * w, r * 0.085);
     g.beginPath(); g.ellipse(cx, my + h * 0.82, w * 0.62, h * 0.4, 0, 0, Math.PI * 2); g.fillStyle = tongue; g.fill(); g.restore(); p(); inkStroke(g, lw);
   } else if (k === 'O' || k === 'OO') {
-    const s = k === 'OO' ? 1.45 : 1;
+    const s = k === 'OO' ? 1.6 : 1;
     g.beginPath(); g.ellipse(cx, my + r * 0.04, r * 0.085 * s, r * 0.12 * s, 0, 0, Math.PI * 2); g.fillStyle = dark; g.fill(); inkStroke(g, lw);
     g.save(); g.beginPath(); g.ellipse(cx, my + r * 0.04, r * 0.085 * s, r * 0.12 * s, 0, 0, Math.PI * 2); g.clip(); g.beginPath(); g.ellipse(cx, my + r * 0.14 * s, r * 0.06 * s, r * 0.04 * s, 0, 0, Math.PI * 2); g.fillStyle = tongue; g.fill(); g.restore();
   }
@@ -171,11 +206,11 @@ function drawHairBack(g, cx, cy, r, H, skin) {
     g.bezierCurveTo(cx - r * 1.22, cy - r * 0.6, cx - r * 0.8, cy - r * 1.18, cx, cy - r * 1.12);
     g.bezierCurveTo(cx + r * 0.8, cy - r * 1.18, cx + r * 1.22, cy - r * 0.6, cx + r * 1.1, cy + r * 0.62);
     g.quadraticCurveTo(cx, cy + r * 0.74, cx - r * 1.1, cy + r * 0.62); g.closePath();
-    g.fillStyle = H.color; g.fill(); inkStroke(g, r * 0.045);
+    g.fillStyle = H.color; g.fill(); inkStroke(g, r * 0.062);
   }
 }
 function drawHairFront(g, cx, cy, r, H, L) {
-  const lw = r * 0.045;
+  const lw = r * 0.062;
   if (H.style === 'bob') {
     g.save(); g.beginPath(); g.arc(cx, cy, r * 1.04, 0, Math.PI * 2); g.clip();
     const p = () => { g.beginPath(); g.moveTo(cx - r * 1.1, cy - r * 0.05); g.lineTo(cx - r * 0.95, cy - r * 0.34); g.quadraticCurveTo(cx - r * 0.45, cy - r * 0.42, cx - r * 0.1, cy - r * 0.36); g.quadraticCurveTo(cx + r * 0.5, cy - r * 0.46, cx + r * 0.98, cy - r * 0.3); g.lineTo(cx + r * 1.1, cy - r * 0.05); g.lineTo(cx + r * 1.1, cy - r * 1.2); g.lineTo(cx - r * 1.1, cy - r * 1.2); g.closePath(); };
@@ -216,7 +251,7 @@ function drawHairFront(g, cx, cy, r, H, L) {
 // person: def (a cast design) + state S (interpolated pose)
 export function drawPerson(g, D, S) {
   const L = S.light || {};
-  const cx = 512 + (S.dx || 0), r = D.headR, lw = r * 0.046;
+  const cx = 512 + (S.dx || 0), r = D.headR, lw = r * 0.066; // bold brush line
   const B = D.body, bob = S.bob || 0, t = S.t || 0;
   const sx = S.sx || 1, sy = S.sy || 1;
   g.save();
@@ -228,18 +263,21 @@ export function drawPerson(g, D, S) {
       const x = cx + s * B.w * 0.16;
       const sw = S.walk != null ? Math.sin(S.walk * Math.PI * 2 + (s > 0 ? Math.PI : 0)) : 0;
       const fx = x + sw * 70, fy = D.legs.foot - 6 - Math.max(0, -Math.cos(S.walk * Math.PI * 2 + (s > 0 ? Math.PI : 0))) * (S.walk != null ? 30 : 0);
-      strokeLine(g, [[x, D.legs.top], [fx, fy]], lw * 1.25);
+      g.taper = [0, 0.2]; strokeLine(g, [[x, D.legs.top], [fx, fy]], lw * 1.6);
       g.beginPath(); g.ellipse(fx + s * 18, fy + 2, r * 0.17, r * 0.075, 0, 0, Math.PI * 2); g.fillStyle = D.legs.shoe; g.fill(); inkStroke(g, lw * 0.8);
     }
   }
   const top = B.top + bob, bot = B.bot;
   const shL = [cx - B.w * 0.36, top + (bot - top) * 0.2 + (S.shrug || 0) * -40], shR = [cx + B.w * 0.36, top + (bot - top) * 0.2 + (S.shrug || 0) * -40];
   const front = S.armsFront;
+  // arms are thick brush strokes (full at the shoulder, thinning toward the wrist), weight S.armW (per shot) or D.armW (design);
+  // fingers are bold tapered strokes
+  const hu = r * 0.052;
   const fullArm = (A, sh) => {
     if (!A) return;
-    strokeLine(g, [sh, A.e, A.h], lw * 2.1);
-    if (A.prop) { drawProp(g, A.prop, A.h[0], A.h[1], r, L, t, lw, A.label ?? D.propLabel ?? ''); hand(g, A.e, A.h, lw, 'grip', A.dir ?? null); }
-    else hand(g, A.e, A.h, lw, A.hand || 'open', A.dir ?? null);
+    g.taper = [0.0, 0.42]; strokeLine(g, [sh, A.e, A.h], lw * (S.armW ?? D.armW ?? 2.3));
+    if (A.prop) { drawProp(g, A.prop, A.h[0], A.h[1], r, L, t, lw, A.label ?? D.propLabel ?? ''); hand(g, A.e, A.h, hu, 'grip', A.dir ?? null); }
+    else hand(g, A.e, A.h, hu, A.hand || 'open', A.dir ?? null);
   };
   if (S.armBehind === 'L') fullArm(S.armL, shL);
   if (S.armBehind === 'R') fullArm(S.armR, shR);
@@ -283,27 +321,29 @@ export function drawPerson(g, D, S) {
     eyes(g, hx, hy, r, S, D);
     if (D.glasses) {
       for (const s of [-1, 1]) {
-        const x = hx + s * r * (D.eyeX ?? 0.3) + (S.look?.[0] || 0) * r * 0.03, y = hy - r * 0.02;
+        const x = hx + s * r * (D.eyeX ?? 0.3) + (S.look?.[0] || 0) * r * 0.03, y = hy - r * 0.02 - (S.glassesUp || 0) * r * 0.2;
         g.beginPath(); g.arc(x, y, r * 0.25, 0, Math.PI * 2); g.fillStyle = 'rgba(255,255,255,0.10)'; g.fill();
         g.lineWidth = r * 0.085; g.strokeStyle = INK; g.stroke(); g.lineWidth = r * 0.055; g.strokeStyle = D.glasses; g.stroke();
         g.save(); g.globalAlpha = 0.6; strokeLine(g, [[x - r * 0.12, y - r * 0.08], [x - r * 0.05, y - r * 0.15]], r * 0.025, '#ffffff'); g.restore();
       }
-      strokeLine(g, [[hx - r * 0.06, hy - r * 0.05], [hx, hy - r * 0.08], [hx + r * 0.06, hy - r * 0.05]], r * 0.05, D.glasses);
+      { const gy = -(S.glassesUp || 0) * r * 0.2; strokeLine(g, [[hx - r * 0.06, hy - r * 0.05 + gy], [hx, hy - r * 0.08 + gy], [hx + r * 0.06, hy - r * 0.05 + gy]], r * 0.05, D.glasses); }
     }
     if (D.moustache) {
-      mouth(g, hx, hy + r * 0.54, r, S.mouth, D);
+      mouth(g, hx, hy + r * 0.54, r, S.mouth, D, S.mouthScale || 1);
       const lift = ['A', 'E', 'D', 'O', 'F'].includes(S.mouth) ? -r * 0.03 : 0;
       const p = () => { g.beginPath(); g.moveTo(hx, hy + r * 0.24 + lift); g.bezierCurveTo(hx + r * 0.28, hy + r * 0.14 + lift, hx + r * 0.5, hy + r * 0.3, hx + r * 0.46, hy + r * 0.5); g.quadraticCurveTo(hx + r * 0.3, hy + r * 0.42 + lift, hx + r * 0.2, hy + r * 0.47 + lift); g.quadraticCurveTo(hx + r * 0.08, hy + r * 0.4 + lift, hx, hy + r * 0.44 + lift); g.quadraticCurveTo(hx - r * 0.08, hy + r * 0.4 + lift, hx - r * 0.2, hy + r * 0.47 + lift); g.quadraticCurveTo(hx - r * 0.3, hy + r * 0.42 + lift, hx - r * 0.46, hy + r * 0.5); g.bezierCurveTo(hx - r * 0.5, hy + r * 0.3, hx - r * 0.28, hy + r * 0.14 + lift, hx, hy + r * 0.24 + lift); g.closePath(); };
       litFill(g, p, D.moustache, L, [hx - r * 0.5, hy + r * 0.14, hx + r * 0.5, hy + r * 0.5], lw);
       for (const s of [-1, 1]) strokeLine(g, [[hx + s * r * 0.12, hy + r * 0.3 + lift], [hx + s * r * 0.2, hy + r * 0.4 + lift]], lw * 0.5, shade(D.moustache, -0.35));
-    } else mouth(g, hx, hy + r * 0.44, r, S.mouth, D);
+    } else mouth(g, hx, hy + r * 0.44, r, S.mouth, D, S.mouthScale || 1);
     if (S.sweat) { const sy2 = (S.sweat > 1 ? 0 : 0) + ((t * 1.5) % 1) * r * 0.25; const p = () => { g.beginPath(); g.moveTo(hx + r * 0.78, hy - r * 0.55 + sy2); g.quadraticCurveTo(hx + r * 0.92, hy - r * 0.3 + sy2, hx + r * 0.84, hy - r * 0.22 + sy2); g.arc(hx + r * 0.78, hy - r * 0.26 + sy2, r * 0.07, 0, Math.PI, false); g.closePath(); }; p(); g.fillStyle = '#9fd6ff'; g.fill(); inkStroke(g, lw * 0.6); }
-    if (S.shock) { for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.35; strokeLine(g, [[hx + Math.cos(a) * r * 1.2, hy + Math.sin(a) * r * 1.2], [hx + Math.cos(a) * r * (1.38 + S.shock * 0.12), hy + Math.sin(a) * r * (1.38 + S.shock * 0.12)]], lw * 1.1); } }
+    if (S.shock > 0.05) { for (const side of [-1, 1]) for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + side * (0.95 + i * 0.32); g.taper = [0.25, 0.85]; strokeLine(g, [[hx + Math.cos(a) * r * 1.42, hy + Math.sin(a) * r * 1.42], [hx + Math.cos(a) * r * (1.56 + S.shock * 0.3), hy + Math.sin(a) * r * (1.56 + S.shock * 0.3)]], lw * 1.6); } } // surprise marks beside the head, clear of the hair
+    if (S.sparkle) { for (const [ax, ay, k] of [[0.95, -0.75, 1], [1.15, -0.35, 0.6], [-1.05, -0.6, 0.7]]) { const sx2 = hx + ax * r, sy2 = hy + ay * r, q = r * 0.12 * k * S.sparkle; g.beginPath(); g.moveTo(sx2, sy2 - q); g.quadraticCurveTo(sx2, sy2, sx2 + q, sy2); g.quadraticCurveTo(sx2, sy2, sx2, sy2 + q); g.quadraticCurveTo(sx2, sy2, sx2 - q, sy2); g.quadraticCurveTo(sx2, sy2, sx2, sy2 - q); g.fillStyle = '#fff4c2'; g.fill(); inkStroke(g, lw * 0.6); } }
   } else if (S.shock) {
     // seen from behind: shock lines still read above the head
     for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.35; strokeLine(g, [[hx + Math.cos(a) * r * 1.2, hy + Math.sin(a) * r * 1.2], [hx + Math.cos(a) * r * (1.38 + S.shock * 0.12), hy + Math.sin(a) * r * (1.38 + S.shock * 0.12)]], lw * 1.1); }
   }
   drawHairFront(g, hx, hy, r, D.hair, L);
+  if (S.hairUp > 0.05 && D.hair.style === 'bob') { for (const k of [-1, 0, 1]) { const bx = hx + k * r * 0.28, by = hy - r * 1.08; const p = () => { g.beginPath(); g.moveTo(bx - r * 0.07, by + r * 0.08); g.quadraticCurveTo(bx + k * r * 0.12, by - r * 0.3 * S.hairUp, bx + k * r * 0.2 + r * 0.03, by - r * 0.36 * S.hairUp); g.quadraticCurveTo(bx + k * r * 0.05, by - r * 0.12 * S.hairUp, bx + r * 0.07, by + r * 0.08); g.closePath(); }; p(); g.fillStyle = D.hair.color; g.fill(); inkStroke(g, lw * 0.8); } }
   g.restore();
   // front arms (hands on the head, a mug raised to the mouth) go over the head; the right arm always comes last
   if (front && S.armBehind !== 'L') fullArm(S.armL, shL);
@@ -386,7 +426,7 @@ export class Card {
   constructor(drawFn, def, { worldH = 1.5, cw = 1024, ch = 1536, footY = 1500 } = {}) {
     this.drawFn = drawFn; this.def = def;
     this.canvas = document.createElement('canvas'); this.canvas.width = cw; this.canvas.height = ch;
-    this.g = this.canvas.getContext('2d');
+    this.g = brushify(this.canvas.getContext('2d'));
     this.tex = new THREE.CanvasTexture(this.canvas); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.anisotropy = 8;
     const worldW = worldH * cw / ch;
     const geo = new THREE.PlaneGeometry(worldW, worldH); geo.translate(0, worldH / 2 - worldH * (1 - footY / ch), 0);

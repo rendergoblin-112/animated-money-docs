@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """voices.py [out.json] [--premade] : list the ElevenLabs voices on your account (name, id, gender, age, accent, description,
 preview URL) to out.json (default voices_list.json). Then measure candidates' previews with
-  node template/tools/run.mjs pitch.py --previews voices_list.json Will,Brian,Jessica
+  node template/tools/run.mjs pitch.py --previews voices_list.json Roger,Brian,Jessica
 Needs ELEVENLABS_API_KEY in the environment, or --env-file <your .env>."""
 import json, sys, urllib.request
 from common import ssl_context, api_key, pop_env_file
